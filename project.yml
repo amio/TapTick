@@ -1,0 +1,91 @@
+name: Magikeys
+options:
+  bundleIdPrefix: com.magikeys
+  deploymentTarget:
+    macOS: "15.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: false
+    CODE_SIGN_IDENTITY: "-"
+
+targets:
+  Magikeys:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Magikeys
+    resources:
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magikeys.app
+        PRODUCT_NAME: Magikeys
+        INFOPLIST_FILE: Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/Magikeys.entitlements
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Manual
+        COMBINE_HIDPI_IMAGES: true
+        ENABLE_TESTING_SEARCH_PATHS: true
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/../Frameworks"
+    entitlements:
+      path: Resources/Magikeys.entitlements
+
+  MagikeysTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/MagikeysTests
+    dependencies:
+      - target: Magikeys
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magikeys.tests
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: true
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Magikeys.app/Contents/MacOS/Magikeys"
+
+  MagikeysUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/MagikeysUITests
+    dependencies:
+      - target: Magikeys
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magikeys.uitests
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: Magikeys
+
+schemes:
+  Magikeys:
+    build:
+      targets:
+        Magikeys: all
+        MagikeysTests: [test]
+        MagikeysUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: MagikeysTests
+          parallelizable: true
+        - name: MagikeysUITests
+          parallelizable: false
+    archive:
+      config: Release
