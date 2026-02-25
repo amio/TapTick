@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Magikeys
+@testable import MagikeysKit
 
 @Suite("ShortcutStore")
 struct ShortcutStoreTests {

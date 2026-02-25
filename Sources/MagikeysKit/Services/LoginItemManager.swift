@@ -4,12 +4,12 @@ import ServiceManagement
 
 /// Manages the "Launch at Login" setting using ServiceManagement framework.
 @Observable
-final class LoginItemManager: @unchecked Sendable {
+public final class LoginItemManager: @unchecked Sendable {
     private(set) var isEnabled: Bool = false
 
     private let service = SMAppService.mainApp
 
-    init() {
+    public init() {
         refreshStatus()
     }
 

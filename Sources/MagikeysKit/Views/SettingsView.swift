@@ -1,7 +1,9 @@
 import SwiftUI
 
 /// The main settings view with tabbed navigation: Shortcuts and General.
-struct SettingsView: View {
+public struct SettingsView: View {
+    public init() {}
+
     @Environment(ShortcutStore.self) private var store
     @Environment(HotkeyService.self) private var hotkeyService
     @Environment(LoginItemManager.self) private var loginItemManager
@@ -13,7 +15,7 @@ struct SettingsView: View {
 
     @State private var selectedTab: Tab = .shortcuts
 
-    var body: some View {
+    public var body: some View {
         TabView(selection: $selectedTab) {
             ShortcutsView()
                 .tabItem {

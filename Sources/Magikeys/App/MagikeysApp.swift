@@ -1,4 +1,5 @@
 import SwiftUI
+import MagikeysKit
 
 /// Magikeys — a utility app for launching apps and running scripts via global hotkeys.
 ///

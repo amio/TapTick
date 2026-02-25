@@ -1,13 +1,15 @@
 import SwiftUI
 
 /// The menu bar dropdown view.
-struct MenuBarView: View {
+public struct MenuBarView: View {
+    public init() {}
+
     @Environment(ShortcutStore.self) private var store
     @Environment(HotkeyService.self) private var hotkeyService
     @Environment(LoginItemManager.self) private var loginItemManager
     @Environment(\.openWindow) private var openWindow
 
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 0) {
             // Status
             HStack {

@@ -16,12 +16,19 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: false
     CODE_SIGN_IDENTITY: "-"
 
+packages:
+  MagikeysKit:
+    path: .
+
 targets:
   Magikeys:
     type: application
     platform: macOS
     sources:
       - path: Sources/Magikeys
+    dependencies:
+      - package: MagikeysKit
+        product: MagikeysKit
     resources:
       - path: Resources
     settings:
@@ -42,21 +49,6 @@ targets:
     entitlements:
       path: Resources/Magikeys.entitlements
 
-  MagikeysTests:
-    type: bundle.unit-test
-    platform: macOS
-    sources:
-      - path: Tests/MagikeysTests
-    dependencies:
-      - target: Magikeys
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.magikeys.tests
-        CODE_SIGN_STYLE: Manual
-        GENERATE_INFOPLIST_FILE: true
-        BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Magikeys.app/Contents/MacOS/Magikeys"
-
   MagikeysUITests:
     type: bundle.ui-testing
     platform: macOS
@@ -76,15 +68,12 @@ schemes:
     build:
       targets:
         Magikeys: all
-        MagikeysTests: [test]
         MagikeysUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - name: MagikeysTests
-          parallelizable: true
         - name: MagikeysUITests
           parallelizable: false
     archive:

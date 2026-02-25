@@ -3,7 +3,7 @@ import Observation
 
 /// Manages persistence and in-memory state of all user-defined shortcuts.
 @Observable
-final class ShortcutStore: @unchecked Sendable {
+public final class ShortcutStore: @unchecked Sendable {
     // MARK: - Published State
 
     private(set) var shortcuts: [Shortcut] = []
@@ -12,7 +12,7 @@ final class ShortcutStore: @unchecked Sendable {
 
     private let fileURL: URL
 
-    init(directory: URL? = nil) {
+    public init(directory: URL? = nil) {
         let dir = directory ?? FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
         ).first!.appendingPathComponent("Magikeys", isDirectory: true)

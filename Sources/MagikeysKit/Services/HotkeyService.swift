@@ -5,7 +5,9 @@ import Observation
 /// Manages global keyboard event monitoring and dispatches matched shortcuts.
 @Observable
 @MainActor
-final class HotkeyService: @unchecked Sendable {
+public final class HotkeyService: @unchecked Sendable {
+    public init() {}
+
     private(set) var isListening = false
     private(set) var lastError: String?
 
