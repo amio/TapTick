@@ -58,30 +58,6 @@ struct ApplicationsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar area
-            HStack {
-                Text("Applications")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                Spacer()
-
-                Text("\(boundCount) bound")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(.quaternary, in: Capsule())
-
-                TextField("Search", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 200)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-
-            Divider()
-
             if isLoading {
                 Spacer()
                 ProgressView("Scanning applications...")
@@ -122,19 +98,14 @@ struct ApplicationsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("Applications")
+        .searchable(text: $searchText, placement: .toolbar, prompt: "Search")
         .task {
             await loadApps()
         }
     }
 
     // MARK: - Helpers
-
-    private var boundCount: Int {
-        store.shortcuts.filter { shortcut in
-            if case .launchApp = shortcut.action { return true }
-            return false
-        }.count
-    }
 
     private func shortcutFor(app: DiscoveredApp) -> Shortcut? {
         store.shortcuts.first { shortcut in

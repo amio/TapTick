@@ -5,13 +5,18 @@ struct ScriptsView: View {
     @Environment(ShortcutStore.self) private var store
     @Environment(HotkeyService.self) private var hotkeyService
 
-    @State private var showingAddSheet = false
+    @State private var showingAddInspector = false
     @State private var editingShortcut: Shortcut?
     @State private var showingDeleteConfirmation = false
     @State private var deletingShortcutID: UUID?
     @State private var runOutput: String?
     @State private var runningShortcutID: UUID?
     @State private var showingRunOutput = false
+
+    /// The inspector is open when either adding or editing.
+    private var isInspectorOpen: Bool {
+        showingAddInspector || editingShortcut != nil
+    }
 
     /// Only script-type shortcuts.
     private var scriptShortcuts: [Shortcut] {
@@ -25,34 +30,6 @@ struct ScriptsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Scripts")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                Spacer()
-
-                Text("\(scriptShortcuts.count) scripts")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(.quaternary, in: Capsule())
-
-                Button {
-                    showingAddSheet = true
-                } label: {
-                    Label("Add Script", systemImage: "plus")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-
-            Divider()
-
             if scriptShortcuts.isEmpty {
                 Spacer()
                 ContentUnavailableView {
@@ -61,7 +38,7 @@ struct ScriptsView: View {
                     Text("Add a script shortcut to run shell commands with a hotkey.")
                 } actions: {
                     Button("Add Script") {
-                        showingAddSheet = true
+                        showingAddInspector = true
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -106,20 +83,40 @@ struct ScriptsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingAddSheet) {
-            NavigationStack {
+        .navigationTitle("Scripts")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingAddInspector = true
+                } label: {
+                    Label("Add Script", systemImage: "plus")
+                }
+                .keyboardShortcut("n", modifiers: .command)
+            }
+        }
+        .inspector(isPresented: Binding(
+            get: { isInspectorOpen },
+            set: { open in
+                if !open {
+                    showingAddInspector = false
+                    editingShortcut = nil
+                }
+            }
+        )) {
+            if showingAddInspector {
                 ScriptEditView(mode: .add) { shortcut in
                     store.add(shortcut)
                     hotkeyService.restart(store: store)
+                    showingAddInspector = false
                 }
-            }
-        }
-        .sheet(item: $editingShortcut) { shortcut in
-            NavigationStack {
+            } else if let shortcut = editingShortcut {
                 ScriptEditView(mode: .edit(shortcut)) { updated in
                     store.update(updated)
                     hotkeyService.restart(store: store)
+                    editingShortcut = nil
                 }
+                // Re-render when the target shortcut changes
+                .id(shortcut.id)
             }
         }
         .sheet(isPresented: $showingRunOutput) {
@@ -399,7 +396,7 @@ struct ScriptEditView: View {
                 } else {
                     TextEditor(text: $scriptContent)
                         .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 120, maxHeight: 250)
+                        .frame(maxWidth: .infinity, minHeight: 200)
                         .border(.quaternary)
                 }
 
@@ -419,8 +416,6 @@ struct ScriptEditView: View {
             }
         }
         .formStyle(.grouped)
-        .padding()
-        .frame(minWidth: 500, minHeight: 420)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
@@ -431,7 +426,7 @@ struct ScriptEditView: View {
                     dismiss()
                 }
                 .disabled(!isValid)
-                .keyboardShortcut(.defaultAction)
+                .keyboardShortcut("s", modifiers: .command)
             }
         }
         .navigationTitle(isEditing ? "Edit Script" : "New Script")
