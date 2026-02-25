@@ -16,19 +16,28 @@ public final class HotkeyService: @unchecked Sendable {
     private var store: ShortcutStore?
     private var executor: ShortcutExecutor?
 
+    // Polling task that watches for accessibility permission grant while waiting for user.
+    private var permissionPollingTask: Task<Void, Never>?
+
     /// Start listening for global hotkeys. Requires Accessibility permission.
+    /// If permission is missing, begins silent polling and auto-starts once granted.
     func start(store: ShortcutStore) {
         guard !isListening else { return }
         self.store = store
         self.executor = ShortcutExecutor()
 
-        // Check accessibility — prompt if not trusted
+        // Check accessibility — skip tap creation and begin polling instead
         if !AXIsProcessTrusted() {
-            Self.promptAccessibility()
             lastError = "Accessibility permission required. Please grant access in System Settings > Privacy & Security > Accessibility."
+            beginPermissionPolling(store: store)
             return
         }
 
+        startEventTap()
+    }
+
+    /// Create and install the CGEvent tap. Assumes accessibility permission is already granted.
+    private func startEventTap() {
         let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
 
         // Use a static callback that retrieves `self` from the userInfo pointer
@@ -54,6 +63,27 @@ public final class HotkeyService: @unchecked Sendable {
         self.runLoopSource = source
         self.isListening = true
         self.lastError = nil
+    }
+
+    /// Start polling for accessibility permission. Checks every 2 seconds and auto-starts
+    /// the event tap once permission is granted (triggered by user action in System Settings).
+    private func beginPermissionPolling(store: ShortcutStore) {
+        permissionPollingTask?.cancel()
+        permissionPollingTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled else { break }
+                guard let self, !self.isListening else { break }
+                guard AXIsProcessTrusted() else { continue }
+                // Permission was just granted — wire up the tap and stop polling.
+                self.permissionPollingTask = nil
+                self.lastError = nil
+                self.store = store
+                self.executor = ShortcutExecutor()
+                self.startEventTap()
+                break
+            }
+        }
     }
 
     /// Stop listening.
@@ -96,12 +126,12 @@ public final class HotkeyService: @unchecked Sendable {
     }
 
     /// Whether accessibility permission has been granted.
-    static var hasAccessibilityPermission: Bool {
+    public static var hasAccessibilityPermission: Bool {
         AXIsProcessTrusted()
     }
 
-    /// Prompt user for accessibility permission.
-    static func requestAccessibilityPermission() {
+    /// Prompt user for accessibility permission via the system dialog.
+    public static func requestAccessibilityPermission() {
         promptAccessibility()
     }
 

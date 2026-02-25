@@ -15,11 +15,16 @@ public struct MenuBarView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
+            // Permission warning — shown at the top when accessibility is not granted.
+            if !HotkeyService.hasAccessibilityPermission {
+                accessibilityWarningRow
+                Divider()
+            }
+
             // Shortcuts list
             if enabledShortcuts.isEmpty {
                 Text("No shortcuts configured")
                     .foregroundStyle(.secondary)
-                    .font(.caption)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
             } else {
@@ -32,13 +37,11 @@ public struct MenuBarView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: shortcut.action.systemImage)
                                         .frame(width: 16)
-                                        .font(.caption)
                                     Text(shortcut.name)
                                         .lineLimit(1)
-                                        .font(.caption)
                                     Spacer()
                                     Text(shortcut.keyCombo.displayString)
-                                        .font(.system(.caption2, design: .monospaced))
+                                        .font(.system(.body, design: .monospaced))
                                         .foregroundStyle(.secondary)
                                 }
                                 .contentShape(Rectangle())
@@ -61,10 +64,8 @@ public struct MenuBarView: View {
             } label: {
                 HStack {
                     Text("Settings...")
-                        .font(.caption)
                     Spacer()
                     Text("\u{2318},")
-                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .contentShape(Rectangle())
@@ -80,10 +81,8 @@ public struct MenuBarView: View {
             } label: {
                 HStack {
                     Text("Quit KeyMagic")
-                        .font(.caption)
                     Spacer()
                     Text("\u{2318}Q")
-                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .contentShape(Rectangle())
@@ -94,5 +93,32 @@ public struct MenuBarView: View {
         }
         .padding(.vertical, 4)
         .frame(width: 260)
+    }
+
+    // MARK: - Accessibility Warning Row
+
+    /// A tappable warning item that explains the missing permission and opens the system prompt.
+    private var accessibilityWarningRow: some View {
+        Button {
+            HotkeyService.requestAccessibilityPermission()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .frame(width: 16)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Accessibility Required")
+                        .fontWeight(.medium)
+                    Text("Tap to grant permission")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 }

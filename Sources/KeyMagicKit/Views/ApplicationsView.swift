@@ -245,7 +245,7 @@ private struct AppTableHeader: View {
             Text("Path")
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text("Hotkey")
-                .frame(width: 160, alignment: .leading)
+                .frame(width: 120, alignment: .leading)
             Text("Enabled")
                 .frame(width: 70, alignment: .trailing)
         }
@@ -297,7 +297,7 @@ private struct AppRow: View {
 
             // Hotkey column
             hotkeyCell
-                .frame(width: 160, alignment: .leading)
+                .frame(width: 120, alignment: .leading)
 
             // Enabled toggle
             enabledCell
@@ -339,8 +339,8 @@ private struct AppRow: View {
         } else if let shortcut {
             HStack(spacing: 4) {
                 Text(shortcut.keyCombo.displayString)
-                    .font(.system(.body, design: .monospaced))
-                    .fontWeight(.medium)
+                    .font(.system(.callout))
+                    .fontWeight(.bold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(
@@ -351,20 +351,22 @@ private struct AppRow: View {
                 Button {
                     onStartRecording()
                 } label: {
-                    Image(systemName: "pencil.circle")
-                        .font(.caption)
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .help("Edit hotkey")
 
                 Button {
                     onClearHotkey()
                 } label: {
-                    Image(systemName: "xmark.circle")
-                        .font(.caption)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .help("Remove hotkey")
             }
         } else {
             Button("Record Hotkey") {
