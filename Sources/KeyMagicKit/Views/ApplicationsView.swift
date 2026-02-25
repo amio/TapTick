@@ -90,15 +90,14 @@ struct ApplicationsView: View {
                 // Table header
                 AppTableHeader()
 
-                Divider()
-
                 // App list
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(sortedApps) { app in
+                        ForEach(Array(sortedApps.enumerated()), id: \.element.id) { index, app in
                             AppRow(
                                 app: app,
                                 shortcut: shortcutFor(app: app),
+                                isOdd: index.isMultiple(of: 2) == false,
                                 isRecording: recordingAppID == app.id,
                                 onStartRecording: {
                                     recordingAppID = app.id
@@ -117,9 +116,6 @@ struct ApplicationsView: View {
                                     toggleEnabled(for: app)
                                 }
                             )
-
-                            Divider()
-                                .padding(.leading, 56)
                         }
                     }
                 }
@@ -239,7 +235,7 @@ struct ApplicationsView: View {
 
 private struct AppTableHeader: View {
     var body: some View {
-        HStack(spacing: 0) {
+        ListTableHeader {
             Text("Application")
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text("Path")
@@ -249,12 +245,6 @@ private struct AppTableHeader: View {
             Text("Enabled")
                 .frame(width: 70, alignment: .trailing)
         }
-        .font(.caption)
-        .fontWeight(.medium)
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
-        .background(.quaternary.opacity(0.5))
     }
 }
 
@@ -263,6 +253,7 @@ private struct AppTableHeader: View {
 private struct AppRow: View {
     let app: DiscoveredApp
     let shortcut: Shortcut?
+    let isOdd: Bool
     let isRecording: Bool
     let onStartRecording: () -> Void
     let onRecordKey: (KeyCombo) -> Void
@@ -273,7 +264,10 @@ private struct AppRow: View {
     @State private var monitor: Any?
 
     var body: some View {
-        HStack(spacing: 0) {
+        ListRowContainer(
+            isOdd: isOdd,
+            accentBackground: shortcut != nil ? Color.accentColor.opacity(0.04) : .clear
+        ) {
             // App name + icon
             HStack(spacing: 10) {
                 Image(nsImage: app.icon)
@@ -303,10 +297,6 @@ private struct AppRow: View {
             enabledCell
                 .frame(width: 70, alignment: .trailing)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
-        .background(shortcut != nil ? Color.accentColor.opacity(0.04) : Color.clear)
         .onDisappear {
             if isRecording {
                 stopLocalMonitor()

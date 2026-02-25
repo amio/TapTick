@@ -68,11 +68,11 @@ struct ScriptsView: View {
                 Spacer()
             } else {
                 // Table header
-                HStack(spacing: 0) {
+                ListTableHeader {
                     Text("Name")
-                        .frame(minWidth: 160, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Text("Script / File")
-                        .frame(minWidth: 200, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Text("Shell")
                         .frame(width: 60, alignment: .center)
                     Text("Hotkey")
@@ -82,20 +82,13 @@ struct ScriptsView: View {
                     Text("Actions")
                         .frame(width: 100, alignment: .center)
                 }
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 6)
-                .background(.quaternary.opacity(0.5))
-
-                Divider()
 
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(scriptShortcuts) { shortcut in
+                        ForEach(Array(scriptShortcuts.enumerated()), id: \.element.id) { index, shortcut in
                             ScriptRow(
                                 shortcut: shortcut,
+                                isOdd: index.isMultiple(of: 2) == false,
                                 isRunning: runningShortcutID == shortcut.id,
                                 onEdit: { editingShortcut = shortcut },
                                 onDelete: {
@@ -108,9 +101,6 @@ struct ScriptsView: View {
                                 },
                                 onTestRun: { testRun(shortcut) }
                             )
-
-                            Divider()
-                                .padding(.leading, 20)
                         }
                     }
                 }
@@ -210,6 +200,7 @@ struct ScriptsView: View {
 
 private struct ScriptRow: View {
     let shortcut: Shortcut
+    let isOdd: Bool
     let isRunning: Bool
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -217,7 +208,7 @@ private struct ScriptRow: View {
     let onTestRun: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
+        ListRowContainer(isOdd: isOdd, verticalPadding: 8) {
             // Name
             HStack(spacing: 8) {
                 Image(systemName: shortcut.action.systemImage)
@@ -226,7 +217,7 @@ private struct ScriptRow: View {
                     .lineLimit(1)
                     .fontWeight(.medium)
             }
-            .frame(minWidth: 160, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Script preview / file path
             Text(scriptPreview)
@@ -234,7 +225,7 @@ private struct ScriptRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(minWidth: 200, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // Shell
             Text(shellName)
@@ -300,9 +291,6 @@ private struct ScriptRow: View {
             }
             .frame(width: 100, alignment: .center)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
         .opacity(shortcut.isEnabled ? 1.0 : 0.7)
     }
 
