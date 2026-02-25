@@ -88,22 +88,7 @@ struct ApplicationsView: View {
                 Spacer()
             } else {
                 // Table header
-                HStack(spacing: 0) {
-                    Text("Application")
-                        .frame(minWidth: 250, alignment: .leading)
-                    Text("Path")
-                        .frame(minWidth: 180, alignment: .leading)
-                    Text("Hotkey")
-                        .frame(width: 160, alignment: .center)
-                    Text("Enabled")
-                        .frame(width: 70, alignment: .center)
-                }
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 6)
-                .background(.quaternary.opacity(0.5))
+                AppTableHeader()
 
                 Divider()
 
@@ -140,6 +125,7 @@ struct ApplicationsView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             await loadApps()
         }
@@ -249,6 +235,29 @@ struct ApplicationsView: View {
     }
 }
 
+// MARK: - Table Header
+
+private struct AppTableHeader: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("Application")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Path")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Hotkey")
+                .frame(width: 160, alignment: .leading)
+            Text("Enabled")
+                .frame(width: 70, alignment: .trailing)
+        }
+        .font(.caption)
+        .fontWeight(.medium)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 6)
+        .background(.quaternary.opacity(0.5))
+    }
+}
+
 // MARK: - App Row
 
 private struct AppRow: View {
@@ -276,7 +285,7 @@ private struct AppRow: View {
                     .lineLimit(1)
                     .fontWeight(shortcut != nil ? .medium : .regular)
             }
-            .frame(minWidth: 250, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Path
             Text(app.path)
@@ -284,15 +293,15 @@ private struct AppRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(minWidth: 180, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // Hotkey column
             hotkeyCell
-                .frame(width: 160, alignment: .center)
+                .frame(width: 160, alignment: .leading)
 
             // Enabled toggle
             enabledCell
-                .frame(width: 70, alignment: .center)
+                .frame(width: 70, alignment: .trailing)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 6)

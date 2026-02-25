@@ -109,9 +109,6 @@ struct GeneralSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear {
-            applyDockIconPolicy(visible: showDockIcon)
-        }
     }
 
     // MARK: - Dock Icon

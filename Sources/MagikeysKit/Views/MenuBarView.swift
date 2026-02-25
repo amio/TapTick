@@ -9,47 +9,43 @@ public struct MenuBarView: View {
     @Environment(LoginItemManager.self) private var loginItemManager
     @Environment(\.openWindow) private var openWindow
 
+    private var enabledShortcuts: [Shortcut] {
+        store.shortcuts.filter(\.isEnabled)
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
-            // Status
-            HStack {
-                Image(systemName: hotkeyService.isListening ? "keyboard.badge.ellipsis" : "keyboard")
-                    .foregroundStyle(hotkeyService.isListening ? .green : .red)
-                Text(hotkeyService.isListening ? "Listening" : "Not Active")
-                    .font(.headline)
-                Spacer()
-                Text("\(store.shortcuts.filter(\.isEnabled).count) active")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-
-            Divider()
-
-            // Quick list of shortcuts
-            if store.shortcuts.isEmpty {
+            // Shortcuts list
+            if enabledShortcuts.isEmpty {
                 Text("No shortcuts configured")
                     .foregroundStyle(.secondary)
-                    .padding()
+                    .font(.caption)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
             } else {
                 ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(store.shortcuts.prefix(10)) { shortcut in
-                            HStack {
-                                Image(systemName: shortcut.action.systemImage)
-                                    .frame(width: 20)
-                                    .foregroundStyle(shortcut.isEnabled ? .primary : .tertiary)
-                                Text(shortcut.name)
-                                    .lineLimit(1)
-                                    .foregroundStyle(shortcut.isEnabled ? .primary : .secondary)
-                                Spacer()
-                                Text(shortcut.keyCombo.displayString)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(.secondary)
+                    VStack(spacing: 0) {
+                        ForEach(enabledShortcuts) { shortcut in
+                            Button {
+                                hotkeyService.trigger(shortcut: shortcut, store: store)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: shortcut.action.systemImage)
+                                        .frame(width: 16)
+                                        .font(.caption)
+                                    Text(shortcut.name)
+                                        .lineLimit(1)
+                                        .font(.caption)
+                                    Spacer()
+                                    Text(shortcut.keyCombo.displayString)
+                                        .font(.system(.caption2, design: .monospaced))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .contentShape(Rectangle())
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
                         }
                     }
                 }
@@ -58,50 +54,45 @@ public struct MenuBarView: View {
 
             Divider()
 
-            // Actions
-            VStack(spacing: 2) {
-                Toggle("Launch at Login", isOn: Binding(
-                    get: { loginItemManager.isEnabled },
-                    set: { _ in loginItemManager.toggle() }
-                ))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-
-                Divider()
-
-                Button {
-                    openWindow(id: "settings")
-                    // Bring app to front
-                    NSApp.activate(ignoringOtherApps: true)
-                } label: {
-                    HStack {
-                        Text("Open Settings...")
-                        Spacer()
-                        Text("⌘,")
-                            .foregroundStyle(.secondary)
-                    }
+            // Footer actions
+            Button {
+                openWindow(id: "settings")
+                NSApp.activate(ignoringOtherApps: true)
+            } label: {
+                HStack {
+                    Text("Settings...")
+                        .font(.caption)
+                    Spacer()
+                    Text("\u{2318},")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-
-                Divider()
-
-                Button {
-                    NSApp.terminate(nil)
-                } label: {
-                    HStack {
-                        Text("Quit Magikeys")
-                        Spacer()
-                        Text("⌘Q")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+
+            Divider()
+
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                HStack {
+                    Text("Quit Magikeys")
+                        .font(.caption)
+                    Spacer()
+                    Text("\u{2318}Q")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
         }
-        .frame(width: 300)
+        .padding(.vertical, 4)
+        .frame(width: 260)
     }
 }

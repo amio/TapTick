@@ -1,14 +1,14 @@
 import Cocoa
 import Foundation
 
-/// Executes shortcut actions (launch apps, run scripts).
+/// Executes shortcut actions (launch/toggle apps, run scripts).
 final class ShortcutExecutor: Sendable {
 
     /// Execute the given action.
     func execute(action: ShortcutAction) {
         switch action {
         case .launchApp(let bundleIdentifier, _):
-            launchApp(bundleIdentifier: bundleIdentifier)
+            toggleApp(bundleIdentifier: bundleIdentifier)
         case .runScript(let script, let shell):
             runInlineScript(script: script, shell: shell)
         case .runScriptFile(let path, let shell):
@@ -16,22 +16,43 @@ final class ShortcutExecutor: Sendable {
         }
     }
 
-    // MARK: - Launch App
+    // MARK: - Toggle App Visibility
 
-    private func launchApp(bundleIdentifier: String) {
-        guard let url = NSWorkspace.shared.urlForApplication(
-            withBundleIdentifier: bundleIdentifier
-        ) else {
-            print("Magikeys: App not found: \(bundleIdentifier)")
-            return
+    private func toggleApp(bundleIdentifier: String) {
+        // Check if the app is already running
+        let runningApps = NSWorkspace.shared.runningApplications.filter {
+            $0.bundleIdentifier == bundleIdentifier
         }
 
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
+        if let app = runningApps.first {
+            // App is running — toggle visibility
+            if app.isActive {
+                // Currently frontmost, hide it
+                app.hide()
+            } else if app.isHidden {
+                // Hidden, unhide and activate
+                app.unhide()
+                app.activate()
+            } else {
+                // Visible but not frontmost, bring to front
+                app.activate()
+            }
+        } else {
+            // App not running — launch it
+            guard let url = NSWorkspace.shared.urlForApplication(
+                withBundleIdentifier: bundleIdentifier
+            ) else {
+                print("Magikeys: App not found: \(bundleIdentifier)")
+                return
+            }
 
-        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
-            if let error {
-                print("Magikeys: Failed to launch app: \(error)")
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = true
+
+            NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
+                if let error {
+                    print("Magikeys: Failed to launch app: \(error)")
+                }
             }
         }
     }

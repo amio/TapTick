@@ -88,6 +88,13 @@ public final class HotkeyService: @unchecked Sendable {
         executor?.execute(action: shortcut.action)
     }
 
+    /// Trigger a shortcut action directly (e.g. from menu bar click).
+    func trigger(shortcut: Shortcut, store: ShortcutStore) {
+        store.markTriggered(id: shortcut.id)
+        let exec = executor ?? ShortcutExecutor()
+        exec.execute(action: shortcut.action)
+    }
+
     /// Whether accessibility permission has been granted.
     static var hasAccessibilityPermission: Bool {
         AXIsProcessTrusted()
