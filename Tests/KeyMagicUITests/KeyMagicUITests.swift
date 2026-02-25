@@ -1,6 +1,6 @@
 import XCTest
 
-final class MagikeysUITests: XCTestCase {
+final class KeyMagicUITests: XCTestCase {
 
     var app: XCUIApplication!
 
@@ -18,7 +18,7 @@ final class MagikeysUITests: XCTestCase {
 
     func testSettingsWindowOpens() throws {
         // The settings window should be available
-        let window = app.windows["Magikeys Settings"]
+        let window = app.windows["KeyMagic Settings"]
         // Give it a moment to appear
         let exists = window.waitForExistence(timeout: 5)
         // Note: The window might not open automatically since it's a menu bar app.
@@ -27,7 +27,7 @@ final class MagikeysUITests: XCTestCase {
     }
 
     func testEmptyStateShowsPlaceholder() throws {
-        let window = app.windows["Magikeys Settings"]
+        let window = app.windows["KeyMagic Settings"]
         if window.waitForExistence(timeout: 5) {
             // Should show "No Shortcut Selected" or similar empty state
             let noSelection = window.staticTexts["No Shortcut Selected"]
@@ -38,7 +38,7 @@ final class MagikeysUITests: XCTestCase {
     }
 
     func testAddButtonExists() throws {
-        let window = app.windows["Magikeys Settings"]
+        let window = app.windows["KeyMagic Settings"]
         if window.waitForExistence(timeout: 5) {
             let addButton = window.buttons["Add Shortcut"]
             if addButton.waitForExistence(timeout: 3) {

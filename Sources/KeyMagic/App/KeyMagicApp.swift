@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import MagikeysKit
+import KeyMagicKit
 
 /// Applies the dock icon policy once at launch based on the stored user preference.
 /// Using an app delegate avoids the crash from accessing `NSApp` in the `App.init()`,
@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-/// Magikeys — a utility app for launching apps and running scripts via global hotkeys.
+/// KeyMagic — a utility app for launching apps and running scripts via global hotkeys.
 ///
 /// Architecture:
 /// - The app lives primarily in the menu bar (MenuBarExtra).
@@ -22,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// - Global keyboard shortcuts are registered via CGEvent taps.
 /// - Login item is managed through ServiceManagement.
 @main
-struct MagikeysApp: App {
+struct KeyMagicApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var store = ShortcutStore()
     @State private var hotkeyService = HotkeyService()
@@ -30,7 +30,7 @@ struct MagikeysApp: App {
 
     var body: some Scene {
         // MARK: - Menu Bar
-        MenuBarExtra("Magikeys", systemImage: "keyboard.badge.ellipsis") {
+        MenuBarExtra("KeyMagic", systemImage: "keyboard.badge.ellipsis") {
             MenuBarView()
                 .environment(store)
                 .environment(hotkeyService)
@@ -38,7 +38,7 @@ struct MagikeysApp: App {
         }
 
         // MARK: - Settings Window
-        Window("Magikeys Settings", id: "settings") {
+        Window("KeyMagic Settings", id: "settings") {
             SettingsView()
                 .environment(store)
                 .environment(hotkeyService)

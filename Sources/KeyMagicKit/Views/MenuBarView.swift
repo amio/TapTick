@@ -79,7 +79,7 @@ public struct MenuBarView: View {
                 NSApp.terminate(nil)
             } label: {
                 HStack {
-                    Text("Quit Magikeys")
+                    Text("Quit KeyMagic")
                         .font(.caption)
                     Spacer()
                     Text("\u{2318}Q")

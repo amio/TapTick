@@ -22,7 +22,7 @@ public final class LoginItemManager: @unchecked Sendable {
                 try service.register()
             }
         } catch {
-            print("Magikeys: Failed to toggle login item: \(error)")
+            print("KeyMagic: Failed to toggle login item: \(error)")
         }
         refreshStatus()
     }

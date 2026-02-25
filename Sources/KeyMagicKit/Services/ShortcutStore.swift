@@ -15,7 +15,7 @@ public final class ShortcutStore: @unchecked Sendable {
     public init(directory: URL? = nil) {
         let dir = directory ?? FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
-        ).first!.appendingPathComponent("Magikeys", isDirectory: true)
+        ).first!.appendingPathComponent("KeyMagic", isDirectory: true)
 
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         self.fileURL = dir.appendingPathComponent("shortcuts.json")
@@ -78,7 +78,7 @@ public final class ShortcutStore: @unchecked Sendable {
             let data = try Data(contentsOf: fileURL)
             shortcuts = try JSONDecoder().decode([Shortcut].self, from: data)
         } catch {
-            print("Magikeys: Failed to load shortcuts: \(error)")
+            print("KeyMagic: Failed to load shortcuts: \(error)")
             shortcuts = []
         }
     }
@@ -90,7 +90,7 @@ public final class ShortcutStore: @unchecked Sendable {
             let data = try encoder.encode(shortcuts)
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("Magikeys: Failed to save shortcuts: \(error)")
+            print("KeyMagic: Failed to save shortcuts: \(error)")
         }
     }
 

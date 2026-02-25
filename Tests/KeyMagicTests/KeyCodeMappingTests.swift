@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import MagikeysKit
+@testable import KeyMagicKit
 
 @Suite("KeyCodeMapping")
 struct KeyCodeMappingTests {

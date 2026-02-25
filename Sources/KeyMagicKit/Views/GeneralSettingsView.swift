@@ -132,7 +132,7 @@ struct GeneralSettingsView: View {
 
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "magikeys-shortcuts.json"
+        panel.nameFieldStringValue = "keymagic-shortcuts.json"
 
         if panel.runModal() == .OK, let url = panel.url {
             try? data.write(to: url)

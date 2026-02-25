@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "MagikeysKit",
+    name: "KeyMagicKit",
     platforms: [
         .macOS(.v15),
     ],
     products: [
-        .library(name: "MagikeysKit", targets: ["MagikeysKit"]),
+        .library(name: "KeyMagicKit", targets: ["KeyMagicKit"]),
     ],
     targets: [
         .target(
-            name: "MagikeysKit",
-            path: "Sources/MagikeysKit",
+            name: "KeyMagicKit",
+            path: "Sources/KeyMagicKit",
             resources: [
                 .process("Resources"),
             ],
@@ -21,9 +21,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "MagikeysTests",
-            dependencies: ["MagikeysKit"],
-            path: "Tests/MagikeysTests",
+            name: "KeyMagicTests",
+            dependencies: ["KeyMagicKit"],
+            path: "Tests/KeyMagicTests",
             swiftSettings: [
                 .swiftLanguageMode(.v6),
             ]

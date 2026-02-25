@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import MagikeysKit
+@testable import KeyMagicKit
 
 // MARK: - KeyCombo Tests
 

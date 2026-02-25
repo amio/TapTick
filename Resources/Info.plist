@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>Magikeys</string>
+    <string>KeyMagic</string>
     <key>CFBundleDisplayName</key>
-    <string>Magikeys</string>
+    <string>KeyMagic</string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleVersion</key>
@@ -21,6 +21,6 @@
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright 2026 Magikeys. All rights reserved.</string>
+    <string>Copyright 2026 KeyMagic. All rights reserved.</string>
 </dict>
 </plist>
