@@ -97,6 +97,21 @@ release: ## Build app — Release (via xcodebuild)
 	    -derivedDataPath $(BUILD_DIR) \
 	    $(PRETTY)
 
+run: ## Build (Debug) and run app from the CLI
+	@$(MAKE) --no-print-directory build
+	@echo "→ Launching app..."
+	@APP_PATH="$(BUILD_DIR)/Build/Products/Debug/KeyMagic.app"; \
+	if [ -d "$$APP_PATH" ]; then \
+	    open "$$APP_PATH"; \
+	else \
+	    BIN="$$APP_PATH/Contents/MacOS/KeyMagic"; \
+	    if [ -x "$$BIN" ]; then \
+	        exec "$$BIN"; \
+	    else \
+	        echo "  ! Could not find app at $$APP_PATH"; exit 1; \
+	    fi \
+	fi
+
 # -----------------------------------------------------------------------------
 # Tests
 # -----------------------------------------------------------------------------
