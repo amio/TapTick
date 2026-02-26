@@ -30,9 +30,9 @@ struct ScriptsView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Left: script list (fixed 240px)
+            // Left: script list (fixed 260px)
             scriptListPanel
-                .frame(width: 240)
+                .frame(width: 260)
 
             Divider()
 
@@ -128,7 +128,9 @@ struct ScriptsView: View {
                     store.update(updated)
                     hotkeyService.restart(store: store)
                 },
-                onRun: { testRun(shortcut) },
+                onRun: { script, shell in
+                    testRun(id: shortcut.id, script: script, shell: shell)
+                },
                 onDelete: {
                     deletingShortcutID = shortcut.id
                     showingDeleteConfirmation = true
@@ -158,12 +160,13 @@ struct ScriptsView: View {
         selectedID = newShortcut.id
     }
 
-    private func testRun(_ shortcut: Shortcut) {
-        runningShortcutID = shortcut.id
+    private func testRun(id: UUID, script: String, shell: ShortcutAction.ShellType) {
+        runningShortcutID = id
         runOutput = nil
 
+        let action = ShortcutAction.runScript(script: script, shell: shell)
         Task.detached {
-            let output = await Self.executeForOutput(action: shortcut.action)
+            let output = await Self.executeForOutput(action: action)
             await MainActor.run {
                 runOutput = output
                 runningShortcutID = nil
@@ -267,7 +270,7 @@ struct ScriptEditView: View {
     let shortcut: Shortcut
     let isRunning: Bool
     let onSave: (Shortcut) -> Void
-    let onRun: () -> Void
+    let onRun: (String, ShortcutAction.ShellType) -> Void
     let onDelete: () -> Void
 
     @State private var name = ""
@@ -311,21 +314,21 @@ struct ScriptEditView: View {
 
             Spacer()
 
-            // Run button
+            // Run button — executes the current editor content directly
             Button {
-                // Save before running so the latest content is executed
-                if hasUnsavedChanges { save() }
-                onRun()
+                onRun(scriptContent, shellType)
             } label: {
-                if isRunning {
+                ZStack {
+                    Label("Run", systemImage: "play.fill")
+                        .opacity(isRunning ? 0 : 1)
                     ProgressView()
                         .controlSize(.small)
-                } else {
-                    Label("Run", systemImage: "play.fill")
+                        .opacity(isRunning ? 1 : 0)
                 }
+                .frame(minWidth: headerActionMinWidth)
             }
-            .disabled(!isValid || isRunning)
-            .controlSize(.small)
+            .disabled(scriptContent.isEmpty || isRunning)
+            .controlSize(.regular)
             .help("Test run this script")
 
             // Delete button
@@ -334,7 +337,8 @@ struct ScriptEditView: View {
             } label: {
                 Label("Delete", systemImage: "trash")
             }
-            .controlSize(.small)
+            .frame(minWidth: headerActionMinWidth)
+            .controlSize(.regular)
             .help("Delete this script")
 
             Divider()
@@ -349,11 +353,15 @@ struct ScriptEditView: View {
             .disabled(!isValid || !hasUnsavedChanges)
             .keyboardShortcut("s", modifiers: .command)
             .buttonStyle(.borderedProminent)
-            .controlSize(.small)
+            .frame(minWidth: headerActionMinWidth)
+            .controlSize(.regular)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
+
+    // Keep header action buttons aligned and stable in width.
+    private var headerActionMinWidth: CGFloat { 60 }
 
     // MARK: - Form Fields
 
