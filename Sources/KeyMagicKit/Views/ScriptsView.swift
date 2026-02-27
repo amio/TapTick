@@ -398,40 +398,6 @@ struct ScriptEditView: View {
 
             Spacer()
 
-            // AI Generate button — always visible; disabled with explanation when unavailable
-            Button {
-                handleGenerate()
-            } label: {
-                ZStack {
-                    Label("Generate", systemImage: "sparkles")
-                        .opacity(isGenerating ? 0 : 1)
-                    ProgressView()
-                        .controlSize(.small)
-                        .opacity(isGenerating ? 1 : 0)
-                }
-                .frame(minWidth: headerActionMinWidth)
-            }
-            .disabled(!isAIAvailable || isGenerating || isRunning)
-            .controlSize(.regular)
-            .help(aiUnavailableReason ?? "Generate script from comments using Apple Intelligence")
-
-            // Run button — executes the current editor content directly
-            Button {
-                onRun(scriptContent, shellType)
-            } label: {
-                ZStack {
-                    Label("Run", systemImage: "play.fill")
-                        .opacity(isRunning ? 0 : 1)
-                    ProgressView()
-                        .controlSize(.small)
-                        .opacity(isRunning ? 1 : 0)
-                }
-                .frame(minWidth: headerActionMinWidth)
-            }
-            .disabled(scriptContent.isEmpty || isRunning)
-            .controlSize(.regular)
-            .help("Test run this script")
-
             // Delete button
             Button(role: .destructive) {
                 onDelete()
@@ -493,18 +459,64 @@ struct ScriptEditView: View {
 
     private var scriptEditor: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Script")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            // Label row: "Script" caption on the left, action buttons on the right
+            HStack(alignment: .center) {
+                Text("Script")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                editorActionButtons
+            }
             TextEditor(text: $scriptContent)
                 .font(.system(.body, design: .monospaced))
+                // Inner padding so text doesn't hug the border
+                .padding(8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .scrollContentBackground(.hidden)
+                .background(Color(.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(Color(.separatorColor), lineWidth: 1)
                 )
         }
         .frame(maxHeight: .infinity)
+    }
+
+    /// Generate and Run buttons sitting above the editor's top-right corner.
+    private var editorActionButtons: some View {
+        HStack(spacing: 6) {
+            // AI Generate button — disabled with an instant tooltip when unavailable
+            Button {
+                handleGenerate()
+            } label: {
+                ZStack {
+                    Label("Generate", systemImage: "sparkles")
+                        .opacity(isGenerating ? 0 : 1)
+                    ProgressView()
+                        .controlSize(.small)
+                        .opacity(isGenerating ? 1 : 0)
+                }
+            }
+            .disabled(!isAIAvailable || isGenerating || isRunning)
+            .controlSize(.small)
+            .immediateHelp(aiUnavailableReason ?? "Generate script from comments using Apple Intelligence")
+
+            // Run button — executes the current editor content directly
+            Button {
+                onRun(scriptContent, shellType)
+            } label: {
+                ZStack {
+                    Label("Run", systemImage: "play.fill")
+                        .opacity(isRunning ? 0 : 1)
+                    ProgressView()
+                        .controlSize(.small)
+                        .opacity(isRunning ? 1 : 0)
+                }
+            }
+            .disabled(scriptContent.isEmpty || isRunning)
+            .controlSize(.small)
+            .help("Test run this script")
+        }
     }
 
     // MARK: - Logic

@@ -20,10 +20,10 @@ enum ShortcutAction: Codable, Hashable, Sendable {
 
         var displayName: String {
             switch self {
-            case .bash: return "Bash"
-            case .zsh:  return "Zsh"
+            case .bash: return "bash"
+            case .zsh:  return "zsh"
             case .sh:   return "sh"
-            case .fish: return "Fish"
+            case .fish: return "fish"
             }
         }
     }
