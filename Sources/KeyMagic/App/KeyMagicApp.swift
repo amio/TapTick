@@ -50,12 +50,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// - A settings window is the main (and only) substantial UI.
 /// - Global keyboard shortcuts are registered via CGEvent taps.
 /// - Login item is managed through ServiceManagement.
+/// - Shortcuts are optionally synced across Macs via iCloud Drive.
 @main
 struct KeyMagicApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var store = ShortcutStore()
+    @State private var cloudSync = CloudSyncService()
+    @State private var store: ShortcutStore
     @State private var hotkeyService = HotkeyService()
     @State private var loginItemManager = LoginItemManager()
+
+    init() {
+        let sync = CloudSyncService()
+        _cloudSync = State(initialValue: sync)
+        _store = State(initialValue: ShortcutStore(cloudSync: sync))
+    }
 
     var body: some Scene {
         // MARK: - Menu Bar
@@ -64,6 +72,7 @@ struct KeyMagicApp: App {
                 .environment(store)
                 .environment(hotkeyService)
                 .environment(loginItemManager)
+                .environment(cloudSync)
         }
 
         // MARK: - Settings Window
@@ -72,6 +81,7 @@ struct KeyMagicApp: App {
                 .environment(store)
                 .environment(hotkeyService)
                 .environment(loginItemManager)
+                .environment(cloudSync)
                 .frame(minWidth: 780, minHeight: 520)
         }
         .windowResizability(.contentSize)

@@ -261,7 +261,7 @@ private struct ScriptRow: View {
             accentBackground: isSelected ? Color.accentColor.opacity(0.12) : .clear,
             verticalPadding: 6
         ) {
-            // Name + icon
+            // Name + icon + availability warning
             HStack(spacing: 6) {
                 Image(systemName: shortcut.action.systemImage)
                     .font(.caption)
@@ -270,6 +270,14 @@ private struct ScriptRow: View {
                     .lineLimit(1)
                     .fontWeight(.medium)
                     .font(.callout)
+
+                // Warn when a script file doesn't exist on this Mac (e.g. synced from another device).
+                if !shortcut.isAvailableOnThisDevice {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                        .help("Script file not found on this Mac")
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

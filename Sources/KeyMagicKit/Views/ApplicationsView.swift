@@ -18,6 +18,9 @@ struct DiscoveredApp: Identifiable, Hashable {
 }
 
 /// The Applications settings view: lists all system apps with hotkey binding support.
+///
+/// Apps synced from other devices that are not installed locally appear in a separate
+/// "Unavailable on This Mac" section so users understand why a shortcut won't fire.
 struct ApplicationsView: View {
     @Environment(ShortcutStore.self) private var store
     @Environment(HotkeyService.self) private var hotkeyService
@@ -53,6 +56,20 @@ struct ApplicationsView: View {
             let bBound = boundIDs.contains(b.id)
             if aBound != bBound { return aBound }
             return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+        }
+    }
+
+    /// App shortcuts synced from other devices whose bundle ID isn't installed locally.
+    private var unavailableAppShortcuts: [Shortcut] {
+        let localBundleIDs = Set(discoveredApps.map(\.id))
+        let query = searchText.lowercased()
+
+        return store.shortcuts.filter { shortcut in
+            guard case .launchApp(let bundleID, let appName) = shortcut.action else { return false }
+            guard !localBundleIDs.contains(bundleID) else { return false }
+            if query.isEmpty { return true }
+            return appName.localizedCaseInsensitiveContains(query)
+                || bundleID.localizedCaseInsensitiveContains(query)
         }
     }
 
@@ -92,6 +109,18 @@ struct ApplicationsView: View {
                                 },
                                 onToggleEnabled: {
                                     toggleEnabled(for: app)
+                                }
+                            )
+                        }
+
+                        // Synced apps not installed on this Mac
+                        if !unavailableAppShortcuts.isEmpty {
+                            UnavailableAppsSection(
+                                shortcuts: unavailableAppShortcuts,
+                                baseIndex: sortedApps.count,
+                                onRemove: { id in
+                                    store.remove(id: id)
+                                    hotkeyService.restart(store: store)
                                 }
                             )
                         }
@@ -302,5 +331,114 @@ private struct AppRow: View {
             Text("--")
                 .foregroundStyle(.quaternary)
         }
+    }
+}
+
+// MARK: - Unavailable Apps Section
+
+/// Shows app shortcuts synced from other devices where the app is not installed locally.
+private struct UnavailableAppsSection: View {
+    let shortcuts: [Shortcut]
+    let baseIndex: Int
+    let onRemove: (UUID) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Section header
+            HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+                Text("Not Installed on This Mac")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("Synced from another device")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.06))
+
+            ForEach(Array(shortcuts.enumerated()), id: \.element.id) { index, shortcut in
+                UnavailableAppRow(
+                    shortcut: shortcut,
+                    isOdd: (baseIndex + index).isMultiple(of: 2) == false,
+                    onRemove: { onRemove(shortcut.id) }
+                )
+            }
+        }
+    }
+}
+
+/// A row for an app shortcut whose target app isn't installed on this Mac.
+private struct UnavailableAppRow: View {
+    let shortcut: Shortcut
+    let isOdd: Bool
+    let onRemove: () -> Void
+
+    private var appName: String {
+        if case .launchApp(_, let name) = shortcut.action { return name }
+        return shortcut.name
+    }
+
+    private var bundleID: String {
+        if case .launchApp(let id, _) = shortcut.action { return id }
+        return ""
+    }
+
+    var body: some View {
+        ListRowContainer(
+            isOdd: isOdd,
+            accentBackground: Color.orange.opacity(0.04),
+            verticalPadding: 8
+        ) {
+            // App name with warning icon
+            HStack(spacing: 10) {
+                Image(systemName: "app.dashed")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 24, height: 24)
+                    .foregroundStyle(.tertiary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(appName)
+                        .lineLimit(1)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+                    Text(bundleID)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Hotkey display (read-only)
+            Text(shortcut.keyCombo?.displayString ?? "--")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Hotkey badge placeholder
+            Text("Unavailable")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+                .frame(width: 120, alignment: .leading)
+
+            // Remove button
+            Button(role: .destructive) {
+                onRemove()
+            } label: {
+                Image(systemName: "xmark.circle")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Remove this synced shortcut")
+            .frame(width: 70, alignment: .trailing)
+        }
+        .opacity(0.7)
     }
 }

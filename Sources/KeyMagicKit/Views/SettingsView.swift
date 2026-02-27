@@ -7,6 +7,7 @@ public struct SettingsView: View {
     @Environment(ShortcutStore.self) private var store
     @Environment(HotkeyService.self) private var hotkeyService
     @Environment(LoginItemManager.self) private var loginItemManager
+    @Environment(CloudSyncService.self) private var cloudSync
 
     enum Tab: String, Hashable, CaseIterable {
         case general = "General"
@@ -35,6 +36,7 @@ public struct SettingsView: View {
             switch selectedTab {
             case .general:
                 GeneralSettingsView()
+                    .environment(cloudSync)
             case .applications:
                 ApplicationsView()
             case .scripts:
