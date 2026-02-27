@@ -1,114 +1,225 @@
 import SwiftUI
 
-/// General settings pane for the app (launch at login, appearance, data, about).
+/// General settings pane for the app (launch at login, appearance, iCloud sync, data, about).
 struct GeneralSettingsView: View {
     @Environment(HotkeyService.self) private var hotkeyService
     @Environment(LoginItemManager.self) private var loginItemManager
     @Environment(ShortcutStore.self) private var store
+    @Environment(CloudSyncService.self) private var cloudSync
 
     @AppStorage("showDockIcon") private var showDockIcon = false
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
 
     var body: some View {
         Form {
-            // MARK: - Status
-            Section {
-                LabeledContent("Hotkey Listener") {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(hotkeyService.isListening ? .green : .red)
-                            .frame(width: 8, height: 8)
-                        Text(hotkeyService.isListening ? "Active" : "Inactive")
-
-                        if !hotkeyService.isListening {
-                            Button("Start") {
-                                hotkeyService.start(store: store)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-
-                if let error = hotkeyService.lastError {
-                    Label(error, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                        .font(.caption)
-                }
-
-                LabeledContent("Accessibility") {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(HotkeyService.hasAccessibilityPermission ? .green : .orange)
-                            .frame(width: 8, height: 8)
-                        Text(HotkeyService.hasAccessibilityPermission ? "Granted" : "Required")
-
-                        if !HotkeyService.hasAccessibilityPermission {
-                            Button("Request") {
-                                HotkeyService.requestAccessibilityPermission()
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-            } header: {
-                Text("Status")
-            }
-
-            // MARK: - Startup & Appearance
-            Section {
-                Toggle("Launch at Login", isOn: Binding(
-                    get: { loginItemManager.isEnabled },
-                    set: { _ in loginItemManager.toggle() }
-                ))
-
-                Toggle("Show Dock Icon", isOn: $showDockIcon)
-                    .onChange(of: showDockIcon) { _, newValue in
-                        applyDockIconPolicy(visible: newValue)
-                    }
-
-                Toggle("Show Menu Bar Icon", isOn: $showMenuBarIcon)
-            } header: {
-                Text("Startup & Appearance")
-            }
-
-            // MARK: - Data
-            Section {
-                LabeledContent("Shortcuts") {
-                    Text("\(store.shortcuts.count) configured")
-                }
-
-                HStack {
-                    Button("Export...") {
-                        exportShortcuts()
-                    }
-
-                    Button("Import...") {
-                        importShortcuts()
-                    }
-                }
-            } header: {
-                Text("Data")
-            }
-
-            // MARK: - About
-            Section {
-                LabeledContent("Version") {
-                    Text(
-                        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
-                            as? String ?? "1.0.0")
-                }
-                LabeledContent("Build") {
-                    Text(
-                        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-                            ?? "1")
-                }
-            } header: {
-                Text("About")
-            }
+            statusSection
+            startupSection
+            iCloudSection
+            dataSection
+            aboutSection
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: - Status
+
+    private var statusSection: some View {
+        Section {
+            LabeledContent("Hotkey Listener") {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(hotkeyService.isListening ? .green : .red)
+                        .frame(width: 8, height: 8)
+                    Text(hotkeyService.isListening ? "Active" : "Inactive")
+
+                    if !hotkeyService.isListening {
+                        Button("Start") {
+                            hotkeyService.start(store: store)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
+
+            if let error = hotkeyService.lastError {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+            }
+
+            LabeledContent("Accessibility") {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(HotkeyService.hasAccessibilityPermission ? .green : .orange)
+                        .frame(width: 8, height: 8)
+                    Text(HotkeyService.hasAccessibilityPermission ? "Granted" : "Required")
+
+                    if !HotkeyService.hasAccessibilityPermission {
+                        Button("Request") {
+                            HotkeyService.requestAccessibilityPermission()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
+        } header: {
+            Text("Status")
+        }
+    }
+
+    // MARK: - Startup & Appearance
+
+    private var startupSection: some View {
+        Section {
+            Toggle("Launch at Login", isOn: Binding(
+                get: { loginItemManager.isEnabled },
+                set: { _ in loginItemManager.toggle() }
+            ))
+
+            Toggle("Show Dock Icon", isOn: $showDockIcon)
+                .onChange(of: showDockIcon) { _, newValue in
+                    applyDockIconPolicy(visible: newValue)
+                }
+
+            Toggle("Show Menu Bar Icon", isOn: $showMenuBarIcon)
+        } header: {
+            Text("Startup & Appearance")
+        }
+    }
+
+    // MARK: - iCloud Sync
+
+    private var iCloudSection: some View {
+        Section {
+            if cloudSync.isAvailable {
+                Toggle("Sync via iCloud", isOn: Binding(
+                    get: { cloudSync.isEnabled },
+                    set: { newValue in
+                        cloudSync.isEnabled = newValue
+                        if newValue {
+                            store.performFullSync()
+                        }
+                    }
+                ))
+
+                if cloudSync.isEnabled {
+                    // Sync status indicator
+                    LabeledContent("Status") {
+                        HStack(spacing: 8) {
+                            if cloudSync.isSyncing {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Syncing...")
+                            } else {
+                                Circle()
+                                    .fill(.green)
+                                    .frame(width: 8, height: 8)
+                                Text("Up to date")
+                            }
+                        }
+                    }
+
+                    if let lastSync = cloudSync.lastSyncDate {
+                        LabeledContent("Last Synced") {
+                            Text(lastSync, style: .relative)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if let error = cloudSync.lastError {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                    }
+
+                    Button("Sync Now") {
+                        store.performFullSync()
+                    }
+                    .controlSize(.small)
+                }
+            } else {
+                // iCloud is not available on this machine
+                LabeledContent("iCloud") {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(.orange)
+                            .frame(width: 8, height: 8)
+                        Text("Not Available")
+                    }
+                }
+                Text("Sign in to iCloud in System Settings to enable sync across your Macs.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("iCloud Sync")
+        }
+    }
+
+    // MARK: - Data
+
+    private var appShortcutCount: Int {
+        store.shortcuts.filter {
+            if case .launchApp = $0.action { return true }
+            return false
+        }.count
+    }
+
+    private var scriptShortcutCount: Int {
+        store.shortcuts.filter {
+            switch $0.action {
+            case .runScript, .runScriptFile: return true
+            case .launchApp: return false
+            }
+        }.count
+    }
+
+    private var dataSection: some View {
+        Section {
+            LabeledContent("Applications") {
+                Text("\(appShortcutCount)")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            LabeledContent("Scripts") {
+                Text("\(scriptShortcutCount)")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+
+            HStack {
+                Button("Export...") {
+                    exportShortcuts()
+                }
+
+                Button("Import...") {
+                    importShortcuts()
+                }
+            }
+        } header: {
+            Text("Data")
+        }
+    }
+
+    // MARK: - About
+
+    private var aboutSection: some View {
+        Section {
+            LabeledContent("Version") {
+                Text(
+                    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+                        as? String ?? "1.0.0")
+            }
+            LabeledContent("Build") {
+                Text(
+                    Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+                        ?? "1")
+            }
+        } header: {
+            Text("About")
+        }
     }
 
     // MARK: - Dock Icon
