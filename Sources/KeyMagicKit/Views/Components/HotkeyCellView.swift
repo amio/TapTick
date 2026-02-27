@@ -1,3 +1,4 @@
+import Carbon.HIToolbox
 import Cocoa
 import SwiftUI
 
@@ -5,26 +6,29 @@ import SwiftUI
 ///
 /// Three visual states:
 /// 1. **Empty** – shows a "Record Hotkey" button.
-/// 2. **Recording** – pulsing red indicator with "Press keys…"; Escape cancels.
+/// 2. **Recording** – pulsing red indicator with live preview text; Escape cancels.
 /// 3. **Bound** – displays the key combo badge (clickable to re-bind) plus a delete button.
+///
+/// Interaction rules:
+/// - Any key activity is previewed in real time. Invalid combos (no primary modifier)
+///   show their characters but recording continues; only valid combos are committed.
+/// - A conflict alert is shown if `checkConflict` returns `true`; recording then stops.
 ///
 /// The parent owns the "which item is recording" state and drives `isRecording` from outside,
 /// so that only one cell can record at a time across the entire list.
 struct HotkeyCellView: View {
-    /// The current key combo (nil = no hotkey bound).
     let keyCombo: KeyCombo?
-    /// Whether this cell is currently in recording mode.
     let isRecording: Bool
-    /// Called when the user wants to start (or re-start) recording.
     let onStartRecording: () -> Void
-    /// Called with the captured key combo after a successful recording.
     let onRecordKey: (KeyCombo) -> Void
-    /// Called when the user cancels recording (Escape or disappear).
     let onCancelRecording: () -> Void
-    /// Called when the user clicks the delete button.
     let onClearHotkey: () -> Void
+    var checkConflict: ((KeyCombo) -> Bool)?
 
     @State private var monitor: Any?
+    /// Live preview text shown while recording. nil = nothing pressed yet.
+    @State private var previewText: String?
+    @State private var conflictingCombo: KeyCombo?
 
     var body: some View {
         Group {
@@ -42,6 +46,16 @@ struct HotkeyCellView: View {
                 onCancelRecording()
             }
         }
+        .alert(
+            "Shortcut Conflict",
+            isPresented: Binding(get: { conflictingCombo != nil }, set: { if !$0 { conflictingCombo = nil } })
+        ) {
+            Button("OK") { conflictingCombo = nil }
+        } message: {
+            if let combo = conflictingCombo {
+                Text("\(combo.displayString) is already bound to another shortcut.")
+            }
+        }
     }
 
     // MARK: - Recording State
@@ -51,12 +65,21 @@ struct HotkeyCellView: View {
             Image(systemName: "record.circle")
                 .foregroundStyle(.red)
                 .symbolEffect(.pulse)
-            Text("Press keys...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if let previewText {
+                Text(previewText)
+                    .font(.body)
+                    // .fontDesign(.monospaced)
+                    .fontWeight(.medium)
+                    .tracking(1)
+            } else {
+                Text("Press keys...")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 3)
+        .frame(width: 97, height: 20, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .stroke(.red.opacity(0.5), lineWidth: 1)
@@ -65,11 +88,10 @@ struct HotkeyCellView: View {
         .onDisappear { stopLocalMonitor() }
     }
 
-    // MARK: - Bound State (clickable combo badge + delete)
+    // MARK: - Bound State
 
     private func boundContent(_ combo: KeyCombo) -> some View {
         HStack(spacing: 4) {
-            // Clicking the badge starts re-binding, identical to the empty-state button
             Button {
                 onStartRecording()
             } label: {
@@ -105,34 +127,62 @@ struct HotkeyCellView: View {
     // MARK: - Key Recording (local monitor)
 
     private func startLocalMonitor() {
-        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
-            // Consume modifier-only events without recording
-            if event.type == .flagsChanged {
-                return nil
-            }
-
-            let keyCode = UInt32(event.keyCode)
-            let modifiers = KeyCombo.Modifiers(
-                cgEventFlags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)))
-
-            // Escape without modifiers cancels recording
-            if keyCode == UInt32(0x35) && modifiers == [] {
-                stopLocalMonitor()
-                onCancelRecording()
-                return nil
-            }
-
-            let combo = KeyCombo(keyCode: keyCode, modifiers: modifiers)
-            stopLocalMonitor()
-            onRecordKey(combo)
+        previewText = nil
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { event in
+            handleEvent(event)
             return nil
         }
     }
 
-    private func stopLocalMonitor() {
-        if let monitor {
-            NSEvent.removeMonitor(monitor)
+    private func handleEvent(_ event: NSEvent) {
+        let keyCode = UInt32(event.keyCode)
+        let modifiers = KeyCombo.Modifiers(
+            cgEventFlags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)))
+
+        if event.type == .flagsChanged {
+            previewText = modifiers.isEmpty ? nil : modifiers.displayString
+            return
         }
+
+        // On key-up: clear preview if the released key left no valid combo
+        if event.type == .keyUp {
+            let primaryModifiers: KeyCombo.Modifiers = [.command, .control, .option]
+            if modifiers.intersection(primaryModifiers).isEmpty {
+                previewText = modifiers.isEmpty ? nil : modifiers.displayString
+            }
+            return
+        }
+
+        // keyDown from here
+        if keyCode == UInt32(kVK_Escape) && modifiers == [] {
+            stopLocalMonitor()
+            onCancelRecording()
+            return
+        }
+
+        let combo = KeyCombo(keyCode: keyCode, modifiers: modifiers)
+        previewText = combo.displayString
+
+        let primaryModifiers: KeyCombo.Modifiers = [.command, .control, .option]
+        guard !modifiers.intersection(primaryModifiers).isEmpty else {
+            // Invalid — show the preview; keyUp will clear it once the key is released
+            return
+        }
+
+        if checkConflict?(combo) == true {
+            conflictingCombo = combo
+            stopLocalMonitor()
+            onCancelRecording()
+            return
+        }
+
+        stopLocalMonitor()
+        onRecordKey(combo)
+    }
+
+    private func stopLocalMonitor() {
+        previewText = nil
+        if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
     }
 }

@@ -27,6 +27,18 @@ struct KeyCombo: Codable, Hashable, Sendable {
             if contains(.function_) { result.append(.function_) }
             return result
         }
+
+        /// Modifier-only display string, e.g. "⌃⌥⌘". Used for live recording preview
+        /// where no key has been pressed yet — avoids appending a raw modifier keyCode.
+        var displayString: String {
+            var parts: [String] = []
+            if contains(.control)   { parts.append("⌃") }
+            if contains(.option)    { parts.append("⌥") }
+            if contains(.shift)     { parts.append("⇧") }
+            if contains(.command)   { parts.append("⌘") }
+            if contains(.function_) { parts.append("fn") }
+            return parts.joined()
+        }
     }
 
     /// Human-readable display string, e.g. "⌃⌥⌘K"

@@ -23,9 +23,6 @@ struct ShortcutEditView: View {
     @State private var shellType: ShortcutAction.ShellType = .zsh
     @State private var useScriptFile: Bool = false
 
-    // Validation
-    @State private var showConflictWarning = false
-
     enum ActionType: String, CaseIterable {
         case launchApp = "Launch App"
         case runScript = "Run Script"
@@ -50,21 +47,9 @@ struct ShortcutEditView: View {
             Section {
                 TextField("Name", text: $name, prompt: Text("e.g. Open Terminal"))
 
-                KeyRecorderView(keyCombo: $keyCombo) { combo in
-                    showConflictWarning = store.hasConflict(
-                        keyCombo: combo,
-                        excludingID: editingShortcut?.id
-                    )
-                }
-
-                if showConflictWarning {
-                    Label(
-                        "This shortcut conflicts with another binding.",
-                        systemImage: "exclamationmark.triangle.fill"
-                    )
-                    .foregroundStyle(.orange)
-                    .font(.caption)
-                }
+                KeyRecorderView(keyCombo: $keyCombo, checkConflict: { combo in
+                    store.hasConflict(keyCombo: combo, excludingID: editingShortcut?.id)
+                })
             } header: {
                 Text("Shortcut")
             }

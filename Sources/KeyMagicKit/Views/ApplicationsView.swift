@@ -109,6 +109,12 @@ struct ApplicationsView: View {
                                 },
                                 onToggleEnabled: {
                                     toggleEnabled(for: app)
+                                },
+                                checkConflict: { combo in
+                                    store.hasConflict(
+                                        keyCombo: combo,
+                                        excludingID: shortcutFor(app: app)?.id
+                                    )
                                 }
                             )
                         }
@@ -264,6 +270,7 @@ private struct AppRow: View {
     let onCancelRecording: () -> Void
     let onClearHotkey: () -> Void
     let onToggleEnabled: () -> Void
+    var checkConflict: ((KeyCombo) -> Bool)?
 
     var body: some View {
         ListRowContainer(
@@ -298,7 +305,8 @@ private struct AppRow: View {
                 onStartRecording: onStartRecording,
                 onRecordKey: onRecordKey,
                 onCancelRecording: onCancelRecording,
-                onClearHotkey: onClearHotkey
+                onClearHotkey: onClearHotkey,
+                checkConflict: checkConflict
             )
             .frame(width: 120, alignment: .leading)
 

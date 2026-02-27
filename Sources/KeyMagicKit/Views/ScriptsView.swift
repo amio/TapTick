@@ -124,6 +124,9 @@ struct ScriptsView: View {
                                 },
                                 onClearHotkey: {
                                     clearHotkey(for: shortcut)
+                                },
+                                checkConflict: { combo in
+                                    store.hasConflict(keyCombo: combo, excludingID: shortcut.id)
                                 }
                             )
                             .onTapGesture { selectedID = shortcut.id }
@@ -255,6 +258,7 @@ private struct ScriptRow: View {
     let onRecordKey: (KeyCombo) -> Void
     let onCancelRecording: () -> Void
     let onClearHotkey: () -> Void
+    var checkConflict: ((KeyCombo) -> Bool)?
 
     var body: some View {
         ListRowContainer(
@@ -289,7 +293,8 @@ private struct ScriptRow: View {
                 onStartRecording: onStartRecording,
                 onRecordKey: onRecordKey,
                 onCancelRecording: onCancelRecording,
-                onClearHotkey: onClearHotkey
+                onClearHotkey: onClearHotkey,
+                checkConflict: checkConflict
             )
             .frame(width: 100, alignment: .leading)
         }
