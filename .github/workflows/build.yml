@@ -215,6 +215,27 @@ jobs:
             --generate-notes \
             "${{ env.DMG_PATH }}#${{ env.DMG_NAME }}.dmg"
 
+      # ---- Update Landing Page ----------------------------------------------
+
+      - name: Update landing page
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # Replace '+' with '%2B' for the download URL
+          TAG_ENCODED=$(echo "$GITHUB_REF_NAME" | sed 's/+/%%2B/g')
+          DOWNLOAD_URL="https://github.com/amio/KeyMagic/releases/download/${TAG_ENCODED}/${{ env.DMG_NAME }}.dmg"
+
+          sed -i '' "s|{{DOWNLOAD_URL}}|$DOWNLOAD_URL|g" public/index.html
+          sed -i '' "s|{{VERSION}}|${{ env.VERSION }}|g" public/index.html
+
+      # ---- Deploy to GitHub Pages -------------------------------------------
+
+      - name: Deploy to GitHub Pages
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+
       # ---- Cleanup keychain -------------------------------------------------
 
       - name: Delete temporary keychain
