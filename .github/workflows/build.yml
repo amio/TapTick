@@ -220,9 +220,7 @@ jobs:
       - name: Update landing page
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          # Replace '+' with '%2B' for the download URL
-          TAG_ENCODED=$(echo "$GITHUB_REF_NAME" | sed 's/+/%%2B/g')
-          DOWNLOAD_URL="https://github.com/amio/KeyMagic/releases/download/${TAG_ENCODED}/${{ env.DMG_NAME }}.dmg"
+          DOWNLOAD_URL="https://github.com/amio/KeyMagic/releases/download/${GITHUB_REF_NAME}/${{ env.DMG_NAME }}.dmg"
 
           sed -i '' "s|{{DOWNLOAD_URL}}|$DOWNLOAD_URL|g" public/index.html
           sed -i '' "s|{{VERSION}}|${{ env.VERSION }}|g" public/index.html
