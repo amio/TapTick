@@ -1,121 +1,48 @@
-@preconcurrency import Cocoa
-import CoreGraphics
+import Carbon.HIToolbox
 import Observation
 
-/// Manages global keyboard event monitoring and dispatches matched shortcuts.
+/// Manages global hotkey registration using Carbon's RegisterEventHotKey API.
+///
+/// This approach is sandbox-compatible and requires no Accessibility permission.
+/// Instead of intercepting the entire keyboard event stream, each KeyCombo is
+/// registered individually with the system; macOS delivers a targeted callback
+/// only when that exact combination is pressed.
 @Observable
 @MainActor
 public final class HotkeyService: @unchecked Sendable {
     public init() {}
 
     private(set) var isListening = false
-    private(set) var lastError: String?
 
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    /// Active registrations keyed by the Carbon hot-key ID (sequential UInt32).
+    private var registrations: [UInt32: Registration] = [:]
+    /// Monotonically increasing ID counter for Carbon hot-key handles.
+    private var nextID: UInt32 = 1
+
     private var store: ShortcutStore?
     private var executor: ShortcutExecutor?
+    private var eventHandlerRef: EventHandlerRef?
 
-    // Polling task that watches for accessibility permission grant while waiting for user.
-    private var permissionPollingTask: Task<Void, Never>?
+    // MARK: - Public API
 
-    /// Start listening for global hotkeys. Requires Accessibility permission.
-    /// If permission is missing, begins silent polling and auto-starts once granted.
+    /// Register all shortcuts in the store and begin dispatching.
     func start(store: ShortcutStore) {
-        guard !isListening else { return }
         self.store = store
         self.executor = ShortcutExecutor()
-
-        // Check accessibility — skip tap creation and begin polling instead
-        if !AXIsProcessTrusted() {
-            lastError = "Accessibility permission required. Please grant access in System Settings > Privacy & Security > Accessibility."
-            beginPermissionPolling(store: store)
-            return
-        }
-
-        startEventTap()
+        rebuildRegistrations(store: store)
     }
 
-    /// Create and install the CGEvent tap. Assumes accessibility permission is already granted.
-    private func startEventTap() {
-        let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
-
-        // Use a static callback that retrieves `self` from the userInfo pointer
-        let userInfo = Unmanaged.passUnretained(self).toOpaque()
-
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: eventMask,
-            callback: hotkeyCallback,
-            userInfo: userInfo
-        ) else {
-            lastError = "Failed to create event tap. Ensure Accessibility permission is granted."
-            return
-        }
-
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-
-        self.eventTap = tap
-        self.runLoopSource = source
-        self.isListening = true
-        self.lastError = nil
-    }
-
-    /// Start polling for accessibility permission. Checks every 2 seconds and auto-starts
-    /// the event tap once permission is granted (triggered by user action in System Settings).
-    private func beginPermissionPolling(store: ShortcutStore) {
-        permissionPollingTask?.cancel()
-        permissionPollingTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
-                guard !Task.isCancelled else { break }
-                guard let self, !self.isListening else { break }
-                guard AXIsProcessTrusted() else { continue }
-                // Permission was just granted — wire up the tap and stop polling.
-                self.permissionPollingTask = nil
-                self.lastError = nil
-                self.store = store
-                self.executor = ShortcutExecutor()
-                self.startEventTap()
-                break
-            }
-        }
-    }
-
-    /// Stop listening.
+    /// Unregister all hotkeys and stop dispatching.
     func stop() {
-        guard isListening else { return }
-        if let tap = eventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-        }
-        if let source = runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
-        }
-        eventTap = nil
-        runLoopSource = nil
+        registrations.values.forEach { UnregisterEventHotKey($0.ref) }
+        registrations.removeAll()
         isListening = false
     }
 
-    /// Restart listening (useful after shortcuts change).
+    /// Re-register all hotkeys (call after shortcuts change).
     func restart(store: ShortcutStore) {
         stop()
         start(store: store)
-    }
-
-    /// Called internally when a matching key combo is detected.
-    fileprivate func handleKeyEvent(keyCode: UInt32, flags: CGEventFlags) {
-        let combo = KeyCombo(
-            keyCode: keyCode,
-            modifiers: KeyCombo.Modifiers(cgEventFlags: flags)
-        )
-
-        guard let store, let shortcut = store.shortcut(for: combo) else { return }
-        store.markTriggered(id: shortcut.id)
-        executor?.execute(action: shortcut.action)
     }
 
     /// Trigger a shortcut action directly (e.g. from menu bar click).
@@ -125,51 +52,119 @@ public final class HotkeyService: @unchecked Sendable {
         exec.execute(action: shortcut.action)
     }
 
-    /// Whether accessibility permission has been granted.
-    public static var hasAccessibilityPermission: Bool {
-        AXIsProcessTrusted()
+    // MARK: - Registration
+
+    private func rebuildRegistrations(store: ShortcutStore) {
+        registrations.values.forEach { UnregisterEventHotKey($0.ref) }
+        registrations.removeAll()
+
+        installEventHandlerIfNeeded()
+
+        for shortcut in store.shortcuts where shortcut.isEnabled {
+            guard let combo = shortcut.keyCombo else { continue }
+            registerCombo(combo, shortcutID: shortcut.id)
+        }
+
+        // Listening is considered active as long as the handler is installed,
+        // even if there are currently no shortcuts to register.
+        isListening = eventHandlerRef != nil
     }
 
-    /// Prompt user for accessibility permission via the system dialog.
-    public static func requestAccessibilityPermission() {
-        promptAccessibility()
+    private func registerCombo(_ combo: KeyCombo, shortcutID: Shortcut.ID) {
+        let id = nextID
+        nextID += 1
+
+        let eventHotKeyID = EventHotKeyID(signature: hotKeySignature, id: id)
+        var ref: EventHotKeyRef?
+
+        let status = RegisterEventHotKey(
+            combo.keyCode,
+            combo.modifiers.carbonModifiers,
+            eventHotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &ref
+        )
+
+        guard status == noErr, let ref else { return }
+        registrations[id] = Registration(ref: ref, shortcutID: shortcutID)
     }
 
-    /// Internal: prompt accessibility using the C global. Wrapped to isolate concurrency warning.
-    private static func promptAccessibility() {
-        let key = kAXTrustedCheckOptionPrompt.takeRetainedValue() as NSString as String
-        let options = [key: true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
+    // MARK: - Carbon Event Handler
+
+    /// Install the application-level Carbon event handler (idempotent).
+    private func installEventHandlerIfNeeded() {
+        guard eventHandlerRef == nil else { return }
+
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+
+        let userInfo = Unmanaged.passUnretained(self).toOpaque()
+
+        InstallEventHandler(
+            GetApplicationEventTarget(),
+            hotKeyEventHandler,
+            1,
+            &eventType,
+            userInfo,
+            &eventHandlerRef
+        )
+    }
+
+    // MARK: - Dispatch
+
+    /// Called by the C-level event handler when a registered hotkey fires.
+    fileprivate func handleHotKeyEvent(id: UInt32) {
+        guard let registration = registrations[id],
+              let store,
+              let shortcut = store.shortcuts.first(where: { $0.id == registration.shortcutID })
+        else { return }
+
+        store.markTriggered(id: shortcut.id)
+        executor?.execute(action: shortcut.action)
     }
 }
 
-// MARK: - CGEvent Callback (C function pointer)
+// MARK: - Supporting Types
 
-private func hotkeyCallback(
-    proxy: CGEventTapProxy,
-    type: CGEventType,
-    event: CGEvent,
-    userInfo: UnsafeMutableRawPointer?
-) -> Unmanaged<CGEvent>? {
-    guard type == .keyDown, let userInfo else {
-        return Unmanaged.passRetained(event)
-    }
+/// Associates a Carbon EventHotKeyRef with a Shortcut UUID.
+private struct Registration {
+    let ref: EventHotKeyRef
+    let shortcutID: Shortcut.ID
+}
 
-    let keyCode = UInt32(event.getIntegerValueField(.keyboardEventKeycode))
-    let flags = event.flags
+/// Four-char code used to namespace our hot-key IDs within the system.
+/// 'KMgc' — KeyMagic global combos.
+private let hotKeySignature: OSType = 0x4B4D6763
 
-    // Only process events that have at least one modifier key
-    let modifierMask: CGEventFlags = [.maskCommand, .maskAlternate, .maskControl, .maskShift]
-    guard !flags.intersection(modifierMask).isEmpty else {
-        return Unmanaged.passRetained(event)
-    }
+// MARK: - Carbon Event Handler (C function pointer)
 
-    let service = Unmanaged<HotkeyService>.fromOpaque(userInfo).takeUnretainedValue()
+private func hotKeyEventHandler(
+    _: EventHandlerCallRef?,
+    event: EventRef?,
+    userData: UnsafeMutableRawPointer?
+) -> OSStatus {
+    guard let event, let userData else { return OSStatus(eventNotHandledErr) }
 
-    // Dispatch to main actor
+    var hotKeyID = EventHotKeyID()
+    let status = GetEventParameter(
+        event,
+        EventParamName(kEventParamDirectObject),
+        EventParamType(typeEventHotKeyID),
+        nil,
+        MemoryLayout<EventHotKeyID>.size,
+        nil,
+        &hotKeyID
+    )
+
+    guard status == noErr else { return OSStatus(eventNotHandledErr) }
+
+    let service = Unmanaged<HotkeyService>.fromOpaque(userData).takeUnretainedValue()
     Task { @MainActor in
-        service.handleKeyEvent(keyCode: keyCode, flags: flags)
+        service.handleHotKeyEvent(id: hotKeyID.id)
     }
 
-    return Unmanaged.passRetained(event)
+    return noErr
 }

@@ -54,31 +54,35 @@ struct KeyCombo: Codable, Hashable, Sendable {
     }
 }
 
-// MARK: - CGEvent Flag Conversion
+// MARK: - Carbon Modifier Conversion
 
 import Carbon.HIToolbox
-import CoreGraphics
 
 extension KeyCombo.Modifiers {
-    /// Convert from CGEventFlags to our Modifiers.
-    init(cgEventFlags flags: CGEventFlags) {
-        var mods: KeyCombo.Modifiers = []
-        if flags.contains(.maskCommand)  { mods.insert(.command) }
-        if flags.contains(.maskAlternate) { mods.insert(.option) }
-        if flags.contains(.maskControl)  { mods.insert(.control) }
-        if flags.contains(.maskShift)    { mods.insert(.shift) }
-        if flags.contains(.maskSecondaryFn) { mods.insert(.function_) }
-        self = mods
-    }
-
-    /// Convert to CGEventFlags.
-    var cgEventFlags: CGEventFlags {
-        var flags: CGEventFlags = []
-        if contains(.command)  { flags.insert(.maskCommand) }
-        if contains(.option)   { flags.insert(.maskAlternate) }
-        if contains(.control)  { flags.insert(.maskControl) }
-        if contains(.shift)    { flags.insert(.maskShift) }
-        if contains(.function_) { flags.insert(.maskSecondaryFn) }
+    /// Convert to Carbon modifier flags for use with RegisterEventHotKey.
+    var carbonModifiers: UInt32 {
+        var flags: UInt32 = 0
+        if contains(.command)   { flags |= UInt32(cmdKey) }
+        if contains(.option)    { flags |= UInt32(optionKey) }
+        if contains(.control)   { flags |= UInt32(controlKey) }
+        if contains(.shift)     { flags |= UInt32(shiftKey) }
         return flags
+    }
+}
+
+// MARK: - NSEvent Flag Conversion
+
+import AppKit
+
+extension KeyCombo.Modifiers {
+    /// Convert from NSEvent modifier flags (used by KeyRecorderView during shortcut recording).
+    init(nsEventFlags flags: NSEvent.ModifierFlags) {
+        var mods: KeyCombo.Modifiers = []
+        if flags.contains(.command)  { mods.insert(.command) }
+        if flags.contains(.option)   { mods.insert(.option) }
+        if flags.contains(.control)  { mods.insert(.control) }
+        if flags.contains(.shift)    { mods.insert(.shift) }
+        if flags.contains(.function) { mods.insert(.function_) }
+        self = mods
     }
 }

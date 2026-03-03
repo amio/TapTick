@@ -242,7 +242,7 @@ struct ApplicationsView: View {
 // MARK: - Table Header
 
 private struct AppTableHeader: View {
-    var headerBackground: AnyShapeStyle = AnyShapeStyle(.quaternary.opacity(0.5))
+    var headerBackground: AnyShapeStyle = AnyShapeStyle(.quaternary.opacity(0.1))
 
     var body: some View {
         ListTableHeader(backgroundStyle: headerBackground, content: {

@@ -41,29 +41,6 @@ struct GeneralSettingsView: View {
                     }
                 }
             }
-
-            if let error = hotkeyService.lastError {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
-                    .font(.caption)
-            }
-
-            LabeledContent("Accessibility") {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(HotkeyService.hasAccessibilityPermission ? .green : .orange)
-                        .frame(width: 8, height: 8)
-                    Text(HotkeyService.hasAccessibilityPermission ? "Granted" : "Required")
-
-                    if !HotkeyService.hasAccessibilityPermission {
-                        Button("Request") {
-                            HotkeyService.requestAccessibilityPermission()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-                }
-            }
         } header: {
             Text("Status")
         }

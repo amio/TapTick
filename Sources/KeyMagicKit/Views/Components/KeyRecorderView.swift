@@ -76,8 +76,7 @@ struct KeyRecorderView: View {
 
     private func handleEvent(_ event: NSEvent) {
         let keyCode = UInt32(event.keyCode)
-        let modifiers = KeyCombo.Modifiers(
-            cgEventFlags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)))
+        let modifiers = KeyCombo.Modifiers(nsEventFlags: event.modifierFlags)
 
         if event.type == .flagsChanged {
             // Show held modifier symbols only — never render the modifier keyCode itself
