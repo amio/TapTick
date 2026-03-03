@@ -54,7 +54,7 @@ struct KeyMagicApp: App {
                 .environment(hotkeyService)
                 .environment(loginItemManager)
                 .environment(cloudSync)
-                .frame(minWidth: 780, minHeight: 520)
+                .frame(minWidth: 890, minHeight: 520)
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 960, height: 620)

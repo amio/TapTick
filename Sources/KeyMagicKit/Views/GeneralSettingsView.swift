@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// General settings pane for the app (launch at login, appearance, iCloud sync, data, about).
+/// General settings pane for the app (launch at login, appearance, data & sync).
 struct GeneralSettingsView: View {
     @Environment(HotkeyService.self) private var hotkeyService
     @Environment(LoginItemManager.self) private var loginItemManager
@@ -14,11 +14,12 @@ struct GeneralSettingsView: View {
         Form {
             statusSection
             startupSection
-            iCloudSection
-            dataSection
-            aboutSection
+            dataAndSyncSection
         }
         .formStyle(.grouped)
+        .safeAreaInset(edge: .bottom) {
+            versionFooter
+        }
     }
 
     // MARK: - Status
@@ -66,76 +67,7 @@ struct GeneralSettingsView: View {
         }
     }
 
-    // MARK: - iCloud Sync
-
-    private var iCloudSection: some View {
-        Section {
-            if cloudSync.isAvailable {
-                Toggle("Sync via iCloud", isOn: Binding(
-                    get: { cloudSync.isEnabled },
-                    set: { newValue in
-                        cloudSync.isEnabled = newValue
-                        if newValue {
-                            store.performFullSync()
-                        }
-                    }
-                ))
-
-                if cloudSync.isEnabled {
-                    // Sync status indicator
-                    LabeledContent("Status") {
-                        HStack(spacing: 8) {
-                            if cloudSync.isSyncing {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Syncing...")
-                            } else {
-                                Circle()
-                                    .fill(.green)
-                                    .frame(width: 8, height: 8)
-                                Text("Up to date")
-                            }
-                        }
-                    }
-
-                    if let lastSync = cloudSync.lastSyncDate {
-                        LabeledContent("Last Synced") {
-                            Text(lastSync, style: .relative)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    if let error = cloudSync.lastError {
-                        Label(error, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.orange)
-                            .font(.caption)
-                    }
-
-                    Button("Sync Now") {
-                        store.performFullSync()
-                    }
-                    .controlSize(.small)
-                }
-            } else {
-                // iCloud is not available on this machine
-                LabeledContent("iCloud") {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(.orange)
-                            .frame(width: 8, height: 8)
-                        Text("Not Available")
-                    }
-                }
-                Text("Sign in to iCloud in System Settings to enable sync across your Macs.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        } header: {
-            Text("iCloud Sync")
-        }
-    }
-
-    // MARK: - Data
+    // MARK: - Data & Sync
 
     private var appShortcutCount: Int {
         store.shortcuts.filter {
@@ -153,50 +85,83 @@ struct GeneralSettingsView: View {
         }.count
     }
 
-    private var dataSection: some View {
+    /// Single section combining shortcut counts, import/export, and iCloud sync.
+    private var dataAndSyncSection: some View {
         Section {
-            LabeledContent("Applications") {
-                Text("\(appShortcutCount)")
+            // Shortcut counts + Export/Import in one row
+            LabeledContent {
+                HStack(spacing: 8) {
+                    Button("Export...") { exportShortcuts() }
+                    Button("Import...") { importShortcuts() }
+                }
+            } label: {
+                Text("\(appShortcutCount) app\(appShortcutCount == 1 ? "" : "s"), \(scriptShortcutCount) script\(scriptShortcutCount == 1 ? "" : "s")")
                     .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            LabeledContent("Scripts") {
-                Text("\(scriptShortcutCount)")
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
             }
 
-            HStack {
-                Button("Export...") {
-                    exportShortcuts()
-                }
+            // iCloud sync toggle or unavailable notice
+            if cloudSync.isAvailable {
+                Toggle("Sync via iCloud", isOn: Binding(
+                    get: { cloudSync.isEnabled },
+                    set: { newValue in
+                        cloudSync.isEnabled = newValue
+                        if newValue { store.performFullSync() }
+                    }
+                ))
 
-                Button("Import...") {
-                    importShortcuts()
+                if cloudSync.isEnabled {
+                    LabeledContent("Status") {
+                        HStack(spacing: 8) {
+                            if cloudSync.isSyncing {
+                                ProgressView().controlSize(.small)
+                                Text("Syncing...")
+                            } else {
+                                Circle().fill(.green).frame(width: 8, height: 8)
+                                Text("Up to date")
+                            }
+                        }
+                    }
+
+                    if let lastSync = cloudSync.lastSyncDate {
+                        LabeledContent("Last Synced") {
+                            Text(lastSync, style: .relative).foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if let error = cloudSync.lastError {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                    }
+
+                    Button("Sync Now") { store.performFullSync() }.controlSize(.small)
                 }
+            } else {
+                LabeledContent("iCloud") {
+                    HStack(spacing: 8) {
+                        Circle().fill(.orange).frame(width: 8, height: 8)
+                        Text("Not Available")
+                    }
+                }
+                Text("Sign in to iCloud in System Settings to enable sync across your Macs.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Data")
+            Text("Data & Sync")
         }
     }
 
-    // MARK: - About
+    // MARK: - Version Footer
 
-    private var aboutSection: some View {
-        Section {
-            LabeledContent("Version") {
-                Text(
-                    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
-                        as? String ?? "1.0.0")
-            }
-            LabeledContent("Build") {
-                Text(
-                    Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-                        ?? "1")
-            }
-        } header: {
-            Text("About")
-        }
+    private var versionFooter: some View {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return Text("KeyMagic \(version) (\(build))")
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 12)
     }
 
     // MARK: - Dock Icon
