@@ -29,7 +29,8 @@ export PATH := /opt/homebrew/bin:/usr/local/bin:$(PATH)
         format lint \
         archive export notarize dmg dist \
         clean reset \
-        ci
+        ci \
+        version-patch version-minor version-major version-bump
 
 # -----------------------------------------------------------------------------
 # Help
@@ -150,6 +151,77 @@ lint: ## Lint Swift source files with swift-format (no writes)
 	@echo "→ Linting..."
 	swift-format lint --recursive Sources Tests
 	@echo "  ✓ done"
+
+# -----------------------------------------------------------------------------
+# Versioning  (simulates npm version patch / minor / major)
+#
+# Version numbers are stored in project.yml. This workflow updates project.yml,
+# regenerates the Xcode project, and commits the changes.
+#
+# version-patch/minor/major workflow:
+#   1. Read MARKETING_VERSION and CURRENT_PROJECT_VERSION from project.yml
+#   2. Compute next semver; increment build number
+#   3. Write both back into project.yml
+#   4. Run `make gen` to update KeyMagic.xcodeproj
+#   5. Commit project.yml, create an annotated git tag vX.Y.Z
+#
+# version-bump workflow:
+#   1. Read and increment CURRENT_PROJECT_VERSION only
+#   2. Write back into project.yml and run `make gen`
+#   3. Commit project.yml
+# -----------------------------------------------------------------------------
+
+_read_ver   = $(shell grep -m1 'MARKETING_VERSION:' project.yml | sed 's/.*"\(.*\)".*/\1/')
+_read_build = $(shell grep -m1 'CURRENT_PROJECT_VERSION:' project.yml | sed 's/.*"\(.*\)".*/\1/')
+
+# Internal macro — bumps a semver component and zeroes trailing ones, then
+# writes project.yml, regenerates, and commits.  Usage: $(call _bump_version,patch|minor|major|build)
+define _bump_version
+	@set -e; \
+	OLD_VER="$(_read_ver)"; \
+	OLD_BUILD="$(_read_build)"; \
+	MAJOR=$$(echo "$$OLD_VER" | cut -d. -f1); \
+	MINOR=$$(echo "$$OLD_VER" | cut -d. -f2); \
+	PATCH=$$(echo "$$OLD_VER" | cut -d. -f3); \
+	case "$(1)" in \
+	  major) MAJOR=$$((MAJOR+1)); MINOR=0; PATCH=0 ;; \
+	  minor) MINOR=$$((MINOR+1)); PATCH=0 ;; \
+	  patch) PATCH=$$((PATCH+1)) ;; \
+	  build) ;; \
+	esac; \
+	NEW_VER="$$MAJOR.$$MINOR.$$PATCH"; \
+	NEW_BUILD=$$((OLD_BUILD+1)); \
+	if [ "$(1)" = "build" ]; then \
+	  echo "→ Bumping build: $$OLD_BUILD → $$NEW_BUILD (version stays $$OLD_VER)"; \
+	  perl -i -pe "s/^(\s+CURRENT_PROJECT_VERSION:\s+)\"[^\"]+\"/\$${1}\"$$NEW_BUILD\"/" project.yml; \
+	  $(MAKE) --no-print-directory gen; \
+	  git add project.yml; \
+	  git commit -m "chore(release): bump build number to $$NEW_BUILD"; \
+	  echo "  ✓ committed build $$NEW_BUILD"; \
+	else \
+	  echo "→ Bumping version : $$OLD_VER → $$NEW_VER"; \
+	  echo "→ Bumping build   : $$OLD_BUILD → $$NEW_BUILD"; \
+	  perl -i -pe "s/^(\s+MARKETING_VERSION:\s+)\"[^\"]+\"/\$${1}\"$$NEW_VER\"/" project.yml; \
+	  perl -i -pe "s/^(\s+CURRENT_PROJECT_VERSION:\s+)\"[^\"]+\"/\$${1}\"$$NEW_BUILD\"/" project.yml; \
+	  $(MAKE) --no-print-directory gen; \
+	  git add project.yml; \
+	  git commit -m "chore(release): bump version to $$NEW_VER (build $$NEW_BUILD)"; \
+	  git tag -a "v$$NEW_VER" -m "Release v$$NEW_VER"; \
+	  echo "  ✓ tagged v$$NEW_VER"; \
+	fi
+endef
+
+version-patch: ## Bump patch version (1.0.0 → 1.0.1), commit and tag
+	$(call _bump_version,patch)
+
+version-minor: ## Bump minor version (1.0.0 → 1.1.0), commit and tag
+	$(call _bump_version,minor)
+
+version-major: ## Bump major version (1.0.0 → 2.0.0), commit and tag
+	$(call _bump_version,major)
+
+version-bump: ## Bump build number only, no semver change, no tag
+	$(call _bump_version,build)
 
 # -----------------------------------------------------------------------------
 # Archive / Release
