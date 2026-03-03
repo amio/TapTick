@@ -197,6 +197,7 @@ define _bump_version
 	  $(MAKE) --no-print-directory gen; \
 	  git add project.yml; \
 	  git commit -m "chore(release): bump build number to $$NEW_BUILD"; \
+	  git tag -a "v$$OLD_VER+build$$NEW_BUILD" -m "Release v$$OLD_VER build $$NEW_BUILD"; \
 	  echo "  ✓ committed build $$NEW_BUILD"; \
 	else \
 	  echo "→ Bumping version : $$OLD_VER → $$NEW_VER"; \

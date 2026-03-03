@@ -19,7 +19,7 @@ name: Build & Distribute
 on:
   push:
     # branches: [main]
-    tags:     ["*"]
+    tags:     ["v*"]
   pull_request:
     # branches: [main]
   workflow_dispatch:
