@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>KeyMagic</title>
+        <item>
+            <title>1.0.0+b12</title>
+            <pubDate>Wed, 04 Mar 2026 09:25:43 +0000</pubDate>
+            <link>https://amio.github.io/KeyMagic/</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.0.0+b12</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/amio/KeyMagic/releases/download/v1.0.0+b12/KeyMagic-1.0.0+b12.dmg" length="4593850" type="application/octet-stream" sparkle:edSignature="o936PZW9FIyZ/yGRdVjyyCAFPZHnCFxAkq+xNThm0HcKUZqd078I+Q1zAhRPuRWHoobG5Dfttke8dV5ABWYWBg=="/>
+        </item>
+    </channel>
+</rss>
