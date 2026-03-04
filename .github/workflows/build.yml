@@ -234,11 +234,14 @@ jobs:
           SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
         run: |
           # --- Install Sparkle CLI tools ---
-          SPARKLE_VERSION="2.7.5"
+          # Pin to the same version resolved by SPM (2.9.0).
+          # Download to a file first — macOS BSD tar cannot decompress xz from stdin.
+          SPARKLE_VERSION="2.9.0"
           SPARKLE_TOOLS="$RUNNER_TEMP/sparkle-tools"
           mkdir -p "$SPARKLE_TOOLS"
           curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
-            | tar xJ -C "$SPARKLE_TOOLS"
+            -o "$RUNNER_TEMP/Sparkle.tar.xz"
+          tar xJf "$RUNNER_TEMP/Sparkle.tar.xz" -C "$SPARKLE_TOOLS"
           SPARKLE_BIN="$SPARKLE_TOOLS/bin"
           echo "Using Sparkle tools from: $SPARKLE_BIN"
 
