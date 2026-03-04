@@ -3,6 +3,15 @@
     <channel>
         <title>KeyMagic</title>
         <item>
+            <title>1.0.0+b13</title>
+            <pubDate>Wed, 04 Mar 2026 10:03:20 +0000</pubDate>
+            <link>https://amio.github.io/KeyMagic/</link>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>1.0.0+b13</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/amio/KeyMagic/releases/download/v1.0.0+b13/KeyMagic-1.0.0+b13.dmg" length="4595281" type="application/octet-stream" sparkle:edSignature="3gxeaX7+/a0hl1Rj34PxeN7DRYLKxu0FYiP8Dam3LWb6XXo5TqxRt/wLMGYZ1ck5N7SPa4ZuvUiHo4x68owUBA=="/>
+        </item>
+        <item>
             <title>1.0.0+b12</title>
             <pubDate>Wed, 04 Mar 2026 09:25:43 +0000</pubDate>
             <link>https://amio.github.io/KeyMagic/</link>
