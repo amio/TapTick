@@ -2,6 +2,12 @@ import AppKit
 import SwiftUI
 import KeyMagicKit
 
+@MainActor
+final class AppState: ObservableObject {
+    static let shared = AppState()
+    @Published var openSettingsTrigger = 0
+}
+
 /// Applies the dock icon policy once at launch based on the stored user preference.
 /// Using an app delegate avoids the crash from accessing `NSApp` in the `App.init()`,
 /// where `NSApplication.shared` has not yet been created.
@@ -12,6 +18,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !showDockIcon {
             NSApp.setActivationPolicy(.accessory)
         }
+        
+        let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
+        if !hasLaunchedBefore {
+            UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
+            NSApp.activate(ignoringOtherApps: true)
+        } else {
+            // Close the settings window automatically created by SwiftUI on subsequent launches
+            for window in NSApp.windows {
+                if window.title == "KeyMagic Settings" || window.identifier?.rawValue == "settings" {
+                    window.close()
+                }
+            }
+        }
+    }
+    
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            AppState.shared.openSettingsTrigger += 1
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        return true
     }
 }
 
@@ -26,6 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct KeyMagicApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var appState = AppState.shared
+    @Environment(\.openWindow) private var openWindow
+    
     @State private var cloudSync = CloudSyncService()
     @State private var store: ShortcutStore
     @State private var hotkeyService = HotkeyService()
@@ -61,5 +91,8 @@ struct KeyMagicApp: App {
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 960, height: 620)
+        .onChange(of: appState.openSettingsTrigger) { _ in
+            openWindow(id: "settings")
+        }
     }
 }
