@@ -51,4 +51,10 @@ enum ShortcutAction: Codable, Hashable, Sendable {
         case .runScriptFile: return "doc.text"
         }
     }
+
+    /// Whether this action launches an application (as opposed to running a script).
+    var isLaunchApp: Bool {
+        if case .launchApp = self { return true }
+        return false
+    }
 }
