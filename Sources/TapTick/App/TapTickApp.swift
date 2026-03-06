@@ -48,20 +48,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             let launchedBySystem = isLaunchedByLoginItem()
 
-            if launchedBySystem {
-                // Launched by login item: close the settings window SwiftUI opens automatically.
-                // Defer to the next run-loop cycle to ensure SwiftUI has created the window first.
-                DispatchQueue.main.async {
-                    for window in NSApp.windows {
-                        if window.title == "TapTick Settings" || window.identifier?.rawValue == "settings" {
-                            window.close()
-                        }
-                    }
-                }
-            } else {
-                // Launched manually by the user: settings window is already opened by SwiftUI.
+            if !launchedBySystem {
+                // Launched manually by the user: open settings window and bring app to front.
+                // Window uses .defaultLaunchBehavior(.suppressed) so it won't open automatically.
+                AppState.shared.openSettingsTrigger += 1
                 NSApp.activate(ignoringOtherApps: true)
             }
+            // Launched by login item: do nothing — window stays hidden, app lives in menu bar.
         }
 
         let showDockIcon = UserDefaults.standard.bool(forKey: "showDockIcon")
@@ -128,6 +121,7 @@ struct TapTickApp: App {
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 960, height: 620)
+        .defaultLaunchBehavior(.suppressed)
         .onChange(of: appState.openSettingsTrigger) { _ in
             openWindow(id: "settings")
         }
