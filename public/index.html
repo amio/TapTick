@@ -13,6 +13,13 @@
         padding: 0;
       }
 
+      @font-face {
+        font-family: 'HeroFont';
+        font-style: normal;
+        font-weight: 400;
+        src: url(data:font/woff2;base64,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) format('woff2');
+      }
+
       :root {
         --bg: #f5f5f7;
         --surface: #ffffff;
@@ -25,10 +32,8 @@
         --radius-xl: 20px;
       }
 
-      /* ── Desktop: single viewport, no scroll ── */
-      html,
-      body {
-        height: 100%;
+      html {
+        scroll-behavior: smooth;
       }
 
       body {
@@ -40,24 +45,29 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      /* ── Page shell ── */
-      .page {
-        display: grid;
-        grid-template-rows: 60px 1fr 44px;
-        height: 100vh;
-        overflow: hidden;
-      }
-
       /* ─────────────────────────────
            Nav
         ───────────────────────────── */
       nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0 48px;
-        border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
+        height: 60px;
+        transition: background 0.3s, border-color 0.3s;
+        border-bottom: 1px solid transparent;
+      }
+
+      nav.scrolled {
+        background: rgba(245, 245, 247, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom-color: var(--border);
       }
 
       .nav-brand {
@@ -77,7 +87,6 @@
       .nav-brand-name {
         font-size: 16px;
         font-weight: 600;
-        letter-spacing: -0.01em;
       }
 
       .nav-actions {
@@ -97,10 +106,7 @@
         color: var(--text-secondary);
         text-decoration: none;
         border: 1px solid var(--border);
-        transition:
-          background 0.16s,
-          color 0.16s,
-          border-color 0.16s;
+        transition: background 0.16s, color 0.16s, border-color 0.16s;
       }
 
       .btn-github:hover {
@@ -119,75 +125,406 @@
         font-weight: 600;
         color: #fff;
         text-decoration: none;
-        background: var(--accent);
-        transition:
-          background 0.16s,
-          transform 0.14s;
+        background: var(--text-primary);
+        transition: background 0.16s, transform 0.14s;
       }
 
       .btn-download-nav:hover {
-        background: var(--accent-hover);
+        background: #333;
         transform: scale(1.02);
       }
 
       /* ─────────────────────────────
-           Hero — two columns
+           Hero — full viewport
         ───────────────────────────── */
       .hero {
-        display: grid;
-        grid-template-columns: 370px 1fr;
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
         overflow: hidden;
+        padding: 60px 24px 80px;
+      }
+
+      #matrix-canvas {
+        position: absolute;
+        inset: 0;
         width: 100%;
-        max-width: 1400px;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      /* Radial vignette — fades the rain towards the edges */
+      .hero-vignette {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+        background: radial-gradient(
+          ellipse 70% 60% at 50% 50%,
+          transparent 0%,
+          rgba(245, 245, 247, 0.65) 58%,
+          rgba(245, 245, 247, 0.95) 100%
+        );
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .hero-content .hero-title,
+      .hero-content .hero-subtitle,
+      .hero-content .hero-eyebrow,
+      .hero-content .hero-meta {
+          text-shadow: 0 0 8px var(--bg), 0 0 12px var(--bg), 0 0 20px var(--bg), 0 0 30px var(--bg);
+            -webkit-text-stroke: 8px var(--bg);
+            paint-order: stroke fill;
+          /*background: linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 0.4) 20%,
+            rgba(0, 0, 0, 0.4) 80%,
+            rgba(0, 0, 0, 0) 100%
+          );*/
+      }
+
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 24px;
+        opacity: 0;
+        animation: fadeUp 0.7s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .hero-title {
+        font-size: clamp(48px, 8vw, 120px);
+        padding: 1vh 0;
+        font-family: HeroFont, --system-font, sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.0em;
+        line-height: 1.0;
+        color: var(--text-primary);
+        opacity: 0;
+        animation: fadeUp 0.7s 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .hero-subtitle {
+        margin-top: 20px;
+        font-size: clamp(16px, 2vw, 20px);
+        line-height: 1.55;
+        color: var(--text-secondary);
+        max-width: 520px;
+        opacity: 0;
+        animation: fadeUp 0.7s 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .hero-cta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 36px;
+        padding-top: 5vh;
+        flex-wrap: wrap;
+        justify-content: center;
+        opacity: 0;
+        animation: fadeUp 0.7s 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .btn-download-main {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 28px;
+        border-radius: 980px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        text-decoration: none;
+        background: var(--text-primary);
+        transition: background 0.16s, transform 0.14s, box-shadow 0.16s;
+      }
+
+      .btn-download-main:hover {
+        background: #333;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      }
+
+      .btn-source {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 12px 22px;
+        border-radius: 980px;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.6);
+        transition: background 0.16s, color 0.16s, border-color 0.16s;
+      }
+
+      .btn-source:hover {
+        background: var(--surface);
+        color: var(--text-primary);
+        border-color: rgba(0, 0, 0, 0.14);
+      }
+
+      .hero-meta {
+        margin-top: 20px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        opacity: 0;
+        animation: fadeUp 0.7s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .hero-scroll-hint {
+        position: absolute;
+        bottom: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        color: var(--text-secondary);
+        opacity: 0;
+        animation: fadeIn 1s 1.4s ease forwards;
+      }
+
+      .hero-scroll-hint svg {
+        animation: bounce 2s ease infinite;
+      }
+
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(5px); }
+      }
+
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+
+      /* ─────────────────────────────
+           Shared section wrapper
+        ───────────────────────────── */
+      .section {
+        padding: 100px 24px;
+        max-width: 1100px;
         margin: 0 auto;
       }
 
-      /* ── Left panel ── */
-      .hero-left {
+      .section-label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 14px;
+      }
+
+      .section-title {
+        font-size: clamp(28px, 4vw, 48px);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+      }
+
+      .section-desc {
+        font-size: 17px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        max-width: 540px;
+      }
+
+      /* Scroll-triggered fade-up */
+      .reveal {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+          opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+          transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ─────────────────────────────
+           Section 1 — Feature cards
+        ───────────────────────────── */
+      .features-cards-section {
+        border-top: 1px solid var(--border);
+      }
+
+      .features-cards-section .section-header {
+        text-align: center;
+        margin-bottom: 64px;
+      }
+
+      .features-cards-section .section-header .section-desc {
+        margin: 0 auto;
+      }
+
+      .feature-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+
+      .feature-card {
+        background: var(--surface);
+        border-radius: var(--radius-xl);
+        padding: 36px 30px 32px;
+        border: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        justify-content: center; /* center content */
+        gap: 0;
+        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Apple Intelligence card gets a subtle gradient border */
+      .feature-card.ai-card {
+        background: linear-gradient(var(--surface), var(--surface)) padding-box,
+          linear-gradient(135deg, #bf5af2, #ff6961, #ffd60a) border-box;
+        border: 1.5px solid transparent;
+      }
+
+      .feature-card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
         align-items: center;
-        padding: 40px 0 40px 48px;
+        justify-content: center;
+        margin-bottom: 24px;
+        flex-shrink: 0;
+      }
+
+      .feature-card-icon.blue {
+        background: rgba(0, 113, 227, 0.1);
+        color: var(--accent);
+      }
+
+      .feature-card-icon.indigo {
+        background: rgba(88, 86, 214, 0.1);
+        color: #5856d6;
+      }
+
+      /* Apple Intelligence rainbow shimmer icon */
+      .feature-card-icon.ai {
+        background: linear-gradient(135deg, rgba(191,90,242,0.15), rgba(255,105,97,0.12), rgba(255,214,10,0.12));
+        position: relative;
         overflow: hidden;
       }
 
-      /* Headline block */
-      .hero-headline {
-        margin-bottom: 30px;
-        z-index: 2;
-        text-align: center;
-        width: 100%;
+      .ai-icon-svg {
+        position: relative;
+        z-index: 1;
       }
 
-      .hero-headline h1 {
-        font-size: clamp(32px, 3.5vw, 48px);
+      .ai-icon-svg path, .ai-icon-svg circle, .ai-icon-svg polyline, .ai-icon-svg line {
+        stroke: url(#aiGrad);
+      }
+
+      .feature-card-title {
+        font-size: 20px;
         font-weight: 700;
-        letter-spacing: -0.025em;
-        line-height: 1.1;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin-bottom: 12px;
+        color: var(--text-primary);
       }
 
-      .hero-headline p {
-        margin-top: 12px;
-        font-size: 16px;
-        line-height: 1.6;
+      .feature-card-desc {
+        font-size: 14px;
         color: var(--text-secondary);
+        line-height: 1.6;
+        flex: 1;
       }
 
-      /* ── Tabs ── */
-      .tabs {
+      .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        padding: 4px 10px;
+        border-radius: 980px;
+        background: linear-gradient(90deg, rgba(191,90,242,0.12), rgba(255,105,97,0.1));
+        color: #bf5af2;
+        width: fit-content;
+      }
+
+      /* ─────────────────────────────
+           Section 2 — Screenshot preview
+           "No UI, just settings."
+        ───────────────────────────── */
+      .preview-section {
+        border-top: 1px solid var(--border);
+      }
+
+      .preview-section .section-header {
+        text-align: center;
+        margin-bottom: 64px;
+      }
+
+      .preview-section .section-header .section-desc {
+        margin: 0 auto;
+      }
+
+      .preview-inner {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 64px;
+        align-items: center;
+      }
+
+      .preview-left {
         display: flex;
         flex-direction: column;
-        gap: 10px; /* visible gap between the two tab cards */
-        margin: 40px 0 90px;
       }
 
-      .tab {
+      .preview-tabs {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 0;
+      }
+
+      .preview-tab {
         position: relative;
         display: flex;
         align-items: flex-start;
         gap: 14px;
-        padding: 18px 18px 18px 22px;
+        padding: 16px 16px 16px 20px;
         border-radius: 14px;
         cursor: pointer;
         border: none;
@@ -198,8 +535,7 @@
         overflow: hidden;
       }
 
-      .tab::before {
-        /* left accent bar */
+      .preview-tab::before {
         content: "";
         position: absolute;
         left: 0;
@@ -212,20 +548,20 @@
         transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
 
-      .tab:hover,
-      .tab.active {
+      .preview-tab:hover,
+      .preview-tab.active {
         background: rgba(0, 113, 227, 0.07);
       }
 
-      .tab.active::before,
-      .tab:hover::before {
+      .preview-tab.active::before,
+      .preview-tab:hover::before {
         transform: scaleY(1);
       }
 
-      .tab-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 11px;
+      .preview-tab-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -234,110 +570,59 @@
         transition: background 0.2s;
       }
 
-      .tab.active .tab-icon,
-      .tab:hover .tab-icon {
+      .preview-tab.active .preview-tab-icon,
+      .preview-tab:hover .preview-tab-icon {
         background: rgba(0, 113, 227, 0.12);
       }
 
-      .tab-icon svg {
-        width: 20px;
-        height: 20px;
+      .preview-tab-icon svg {
+        width: 18px;
+        height: 18px;
         color: var(--text-secondary);
         transition: color 0.2s;
       }
 
-      .tab.active .tab-icon svg,
-      .tab:hover .tab-icon svg {
+      .preview-tab.active .preview-tab-icon svg,
+      .preview-tab:hover .preview-tab-icon svg {
         color: var(--accent);
       }
 
-      .tab-text {
+      .preview-tab-text {
         display: flex;
         flex-direction: column;
-        gap: 3px;
-        padding-top: 2px;
+        gap: 2px;
+        padding-top: 1px;
       }
 
-      .tab-title {
-        font-size: 17px;
+      .preview-tab-title {
+        font-size: 15px;
         font-weight: 600;
         color: var(--text-primary);
         letter-spacing: -0.012em;
       }
 
-      .tab-desc {
-        font-size: 13px;
+      .preview-tab-desc {
+        font-size: 12px;
         color: var(--text-secondary);
         line-height: 1.45;
       }
 
-      /* ── CTA ── */
-      .hero-cta {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .btn-download-main {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 12px 26px;
-        border-radius: 980px;
-        font-size: 15px;
-        font-weight: 600;
-        color: #fff;
-        text-decoration: none;
-        background: var(--accent);
-        box-shadow: 0 2px 12px rgba(0, 113, 227, 0.32);
-        transition:
-          background 0.16s,
-          transform 0.14s,
-          box-shadow 0.16s;
-        width: fit-content;
-      }
-
-      .btn-download-main:hover {
-        background: var(--accent-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(0, 113, 227, 0.38);
-      }
-
-      .btn-download-main:active {
-        transform: translateY(0);
-      }
-
-      .version-tag {
-        font-size: 11px;
-        color: var(--text-secondary);
-        text-align: center;
-      }
-
-      /* ── Right panel — screenshot ── */
-      .hero-right {
+      .preview-right {
         position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 40px 48px 40px 48px;
-        overflow: hidden;
       }
 
-      /* Ambient glow */
-      .hero-right::before {
+      /* Ambient glow behind screenshot */
+      .preview-right::before {
         content: "";
         position: absolute;
-        inset: 15% 10%;
+        inset: 10%;
         border-radius: 50%;
         background: radial-gradient(
-          ellipse at 50% 55%,
-          rgba(0, 113, 227, 0.11) 0%,
-          transparent 68%
+          ellipse at 50% 50%,
+          rgba(0, 113, 227, 0.1) 0%,
+          transparent 70%
         );
         pointer-events: none;
-        z-index: 0;
       }
 
       .screenshot-stage {
@@ -346,13 +631,6 @@
         z-index: 1;
       }
 
-      @media (min-width: 767px) {
-        .screenshot-stage {
-            margin-bottom: 5vh;
-        }
-      }
-
-      /* Invisible sizer — keeps column height */
       .screenshot-placeholder {
         width: 100%;
         aspect-ratio: 16 / 10;
@@ -369,8 +647,8 @@
         transform: scale(0.98) translateY(8px);
         pointer-events: none;
         transition:
-          opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-          transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+          opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+          transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       .screenshot-slide.active {
@@ -386,22 +664,48 @@
         height: 100%;
         object-fit: contain;
         border-radius: var(--radius-xl);
-        /*box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05);*/
+        /*box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0, 0, 0, 0.04);*/
         user-select: none;
         -webkit-user-drag: none;
+      }
+
+      /* ─────────────────────────────
+           Final CTA section
+        ───────────────────────────── */
+      .cta-section {
+        border-top: 1px solid var(--border);
+        text-align: center;
+        padding: 120px 24px;
+      }
+
+      .cta-section .section-title {
+        max-width: 600px;
+        margin: 0 auto 16px;
+      }
+
+      .cta-section .section-desc {
+        margin: 0 auto 40px;
+      }
+
+      .cta-buttons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
 
       /* ─────────────────────────────
            Footer
         ───────────────────────────── */
       footer {
+        border-top: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 12px;
         color: var(--text-secondary);
-        border-top: 1px solid var(--border);
-        padding: 0 48px;
+        padding: 20px 48px;
       }
 
       footer a {
@@ -414,318 +718,431 @@
       }
 
       /* ─────────────────────────────
-           Mobile  (≤ 767px)
+           Tablet  (768px – 1023px)
         ───────────────────────────── */
-      @media (max-width: 767px) {
-        html,
-        body {
-          height: auto;
+      @media (min-width: 768px) and (max-width: 1023px) {
+        nav { padding: 0 32px; }
+
+        .feature-cards-grid {
+          grid-template-columns: 1fr;
+          max-width: 480px;
+          margin: 0 auto;
         }
 
-        .page {
-          display: flex;
-          flex-direction: column;
-          height: auto;
-          overflow: visible;
-        }
-
-        nav {
-          padding: 0 20px;
-          height: 56px;
-          position: sticky;
-          top: 0;
-          background: rgba(245, 245, 247, 0.9);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          z-index: 10;
-        }
-
-        .btn-github span {
-          display: none;
-        } /* hide label, keep icon */
-
-        .hero {
-          display: flex;
-          flex-direction: column;
-          overflow: visible;
-        }
-
-        .hero-right {
-          order: 1;
-          padding: 32px 20px 16px;
-          align-items: center;
-          text-align: center;
-        }
-
-        .hero-headline {
-          margin-bottom: 24px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
-        .hero-headline h1 {
-          font-size: 32px;
-        }
-
-        .hero-headline h1 br {
-          display: none;
-        }
-
-        .hero-headline p {
-          max-width: 100%;
-          text-align: center;
-        }
-
-        .hero-left {
-          order: 2;
-          padding: 16px 20px 36px;
-          border-right: none;
-          align-items: center;
-        }
-
-        .tabs {
-          margin: 28px 0 32px;
-          gap: 8px;
-        }
-
-        .hero-right {
-          padding: 32px 20px;
-        }
-
-        .hero-right::before {
-          display: none;
-        }
-
-        /* On mobile: tabs act as click toggles */
-        .tab {
-          padding: 15px 16px 15px 20px;
-        }
-
-        footer {
-          padding: 0 20px;
-          height: 48px;
+        .preview-inner {
+          grid-template-columns: 1fr;
+          gap: 40px;
         }
       }
 
       /* ─────────────────────────────
-           Tablet  (768px – 1023px)
+           Mobile  (≤ 767px)
         ───────────────────────────── */
-      @media (min-width: 768px) and (max-width: 1023px) {
-        .hero {
-          grid-template-columns: 300px 1fr;
+      @media (max-width: 767px) {
+        nav { padding: 0 20px; }
+
+        .btn-github span { display: none; }
+
+        .hero { padding: 80px 20px; }
+
+        .section { padding: 72px 20px; }
+
+        .feature-cards-grid {
+          grid-template-columns: 1fr;
+          gap: 14px;
         }
 
-        .hero-left {
-          padding: 40px 28px 36px 32px;
+        .preview-inner {
+          grid-template-columns: 1fr;
+          gap: 32px;
         }
 
-        nav {
-          padding: 0 32px;
+        .hero-cta,
+        .cta-buttons {
+          flex-direction: column;
+          width: 100%;
         }
 
-        footer {
-          padding: 0 32px;
+        .btn-download-main,
+        .btn-source {
+          width: 100%;
+          justify-content: center;
         }
 
-        .hero-right {
-          padding: 32px 32px;
-        }
+        footer { padding: 20px; }
       }
     </style>
   </head>
   <body>
-    <div class="page">
-      <!-- Nav -->
-      <nav>
-        <a class="nav-brand" href="#">
-          <img src="icon.png" alt="TapTick icon" />
-          <span class="nav-brand-name">TapTick</span>
+    <!-- Hidden SVG defs for AI gradient -->
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <linearGradient id="aiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#bf5af2" />
+          <stop offset="50%"  stop-color="#ff6961" />
+          <stop offset="100%" stop-color="#ffd60a" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- Nav -->
+    <nav id="nav">
+      <a class="nav-brand" href="#">
+        <img src="icon.png" alt="TapTick icon" />
+        <span class="nav-brand-name">TapTick</span>
+      </a>
+      <div class="nav-actions">
+        <a
+          class="btn-github"
+          href="https://github.com/amio/TapTick"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
         </a>
-        <div class="nav-actions">
-          <a
-            class="btn-github"
-            href="https://github.com/amio/TapTick"
-            target="_blank"
-            rel="noopener"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
-              />
-            </svg>
-            <span>GitHub</span>
+        <a class="btn-download-nav" href="{{DOWNLOAD_URL}}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 2v8M4 7l4 4 4-4M2 12h12" />
+          </svg>
+          Download
+        </a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <canvas id="matrix-canvas"></canvas>
+      <div class="hero-vignette"></div>
+
+      <div class="hero-content">
+        <span class="hero-eyebrow">macOS Global Hotkeys</span>
+        <h1 class="hero-title">TapTick</h1>
+        <p class="hero-subtitle">
+          Bind keyboard shortcuts to app launches and shell scripts. <br />
+          Do things, ASAP.
+        </p>
+        <div class="hero-cta">
+          <a class="btn-download-main" href="{{DOWNLOAD_URL}}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="h-[18px] w-[18px]"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>
+            Download for Mac
           </a>
-          <a class="btn-download-nav" href="{{DOWNLOAD_URL}}">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M8 2v8M4 7l4 4 4-4M2 12h12" />
+          <a class="btn-source" href="https://github.com/amio/TapTick" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
             </svg>
-            Download
+            View Source
           </a>
         </div>
-      </nav>
+        <p class="hero-meta">macOS 15+ · Apple Silicon &amp; Intel · MIT License</p>
+      </div>
 
-      <!-- Hero -->
-      <main class="hero">
-        <!-- Left -->
-        <aside class="hero-left">
-          <!-- Feature tabs -->
-          <div class="tabs" role="tablist">
-            <button
-              class="tab active"
-              data-target="apps"
-              role="tab"
-              aria-selected="true"
-            >
-              <span class="tab-icon">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+      <div class="hero-scroll-hint">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M5 12l7 7 7-7" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- Section 1: Feature Cards -->
+    <section class="section features-cards-section">
+      <div class="section-header reveal">
+        <p class="section-label">What it does</p>
+        <h2 class="section-title">One shortcut. Any action.</h2>
+        <p class="section-desc">
+          Two simple modes — just the right tool for every workflow.
+        </p>
+      </div>
+
+      <div class="feature-cards-grid">
+        <!-- Application Shortcut -->
+        <div class="feature-card reveal" style="transition-delay: 0.1s">
+          <div class="feature-card-icon blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </div>
+          <h3 class="feature-card-title">Application Shortcut</h3>
+          <p class="feature-card-desc">
+            Jump to any app instantly. TapTick brings the window to focus —
+            or launches it if not running — using only native macOS APIs.
+          </p>
+        </div>
+
+        <!-- Script Runner -->
+        <div class="feature-card reveal" style="transition-delay: 0.2s">
+          <div class="feature-card-icon indigo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 17 10 11 4 5" />
+              <line x1="12" y1="19" x2="20" y2="19" />
+            </svg>
+          </div>
+          <h3 class="feature-card-title">Script Runner</h3>
+          <p class="feature-card-desc">
+            Trigger shell scripts from anywhere. Write inline snippets.
+            Automate repetitive tasks without ever touching the mouse.
+          </p>
+        </div>
+
+        <!-- AI Generator -->
+        <div class="feature-card ai-card reveal" style="transition-delay: 0.3s">
+          <div class="feature-card-icon ai">
+            <svg class="ai-icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V6a4 4 0 0 1 4-4z" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+          </div>
+          <h3 class="feature-card-title">AI Script Generator</h3>
+          <p class="feature-card-desc">
+            Describe your automation in plain language. TapTick generates the script—powered by Apple Intelligence, on-device and private.
+          </p>
+          <span class="ai-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            Apple Intelligence
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Screenshot Preview -->
+    <section class="section preview-section">
+      <div class="section-header reveal">
+        <p class="section-label">Settings</p>
+        <h2 class="section-title">No UI. Just Settings.</h2>
+        <p class="section-desc">
+          Everything lives in a clean settings panel. <br />
+          It does it's job, under the scene.
+        </p>
+      </div>
+
+      <div class="preview-inner">
+        <!-- Left: tabs -->
+        <div class="preview-left reveal">
+          <div class="preview-tabs" role="tablist">
+            <button class="preview-tab active" data-target="apps" role="tab" aria-selected="true">
+              <span class="preview-tab-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="7" height="7" rx="1.5" />
                   <rect x="14" y="3" width="7" height="7" rx="1.5" />
                   <rect x="3" y="14" width="7" height="7" rx="1.5" />
                   <rect x="14" y="14" width="7" height="7" rx="1.5" />
                 </svg>
               </span>
-              <span class="tab-text">
-                <span class="tab-title">Application Launcher</span>
-                <span class="tab-desc">Instant app switching with hotkeys</span>
+              <span class="preview-tab-text">
+                <span class="preview-tab-title">Application Shortcut</span>
+                <span class="preview-tab-desc">Instant app switching with hotkeys</span>
               </span>
             </button>
 
-            <button
-              class="tab"
-              data-target="scripts"
-              role="tab"
-              aria-selected="false"
-            >
-              <span class="tab-icon">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+            <button class="preview-tab" data-target="scripts" role="tab" aria-selected="false">
+              <span class="preview-tab-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="4 17 10 11 4 5" />
                   <line x1="12" y1="19" x2="20" y2="19" />
                 </svg>
               </span>
-              <span class="tab-text">
-                <span class="tab-title">Script Runner</span>
-                <span class="tab-desc"
-                  >Trigger shell scripts from anywhere</span
-                >
+              <span class="preview-tab-text">
+                <span class="preview-tab-title">Script Runner</span>
+                <span class="preview-tab-desc">Trigger shell scripts from anywhere</span>
               </span>
             </button>
           </div>
+        </div>
 
-          <!-- Download CTA -->
-          <div class="hero-cta">
-            <a class="btn-download-main" href="{{DOWNLOAD_URL}}">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M8 2v8M4 7l4 4 4-4M2 12h12" />
-              </svg>
-              Download for macOS
-            </a>
-            <span class="version-tag">Version {{VERSION}} · macOS 15+</span>
-          </div>
-        </aside>
-
-        <!-- Right — screenshot stage -->
-        <div class="hero-right">
-          <div class="hero-headline">
-            <h1>Global Hotkeys<br />for macOS</h1>
-            <p>
-              Bind keyboard shortcuts to app launches and shell scripts.
-              Native, lightweight, and instant.
-            </p>
-          </div>
-
+        <!-- Right: screenshot stage -->
+        <div class="preview-right reveal" style="transition-delay: 0.15s">
           <div class="screenshot-stage" id="screenshotStage">
             <div class="screenshot-placeholder"></div>
-
             <div class="screenshot-slide active" id="slide-apps">
-              <img
-                src="screenshot-apps.png"
-                alt="Application Launcher screenshot"
-              />
+              <img src="screenshot-apps.png" alt="Application Shortcut screenshot" />
             </div>
             <div class="screenshot-slide" id="slide-scripts">
-              <img
-                src="screenshot-scripts.png"
-                alt="Script Runner screenshot"
-              />
+              <img src="screenshot-scripts.png" alt="Script Runner screenshot" />
             </div>
           </div>
         </div>
-      </main>
+      </div>
+    </section>
 
-      <!-- Footer -->
-      <footer>
-        <p>
-          &copy; 2026 <a href="https://github.com/amio/TapTick">TapTick</a>.
-          Built with Swift &amp; SwiftUI.
-        </p>
-      </footer>
-    </div>
+    <!-- Final CTA -->
+    <section class="cta-section reveal">
+      <p class="section-label">Get started</p>
+      <h2 class="section-title">Your keyboard. Supercharged.</h2>
+      <p class="section-desc">
+        Free, open-source, and built for macOS.<br />
+        No account. No subscription. No cloud.
+      </p>
+      <div class="cta-buttons">
+        <a class="btn-download-main" href="{{DOWNLOAD_URL}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="h-[18px] w-[18px]"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>
+          Download for Mac
+        </a>
+        <a class="btn-source" href="https://github.com/amio/TapTick" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          View Source
+        </a>
+      </div>
+      <p style="margin-top: 16px; font-size: 12px; color: var(--text-secondary)">
+        Version {{VERSION}} · macOS 15+
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>
+        &copy; 2026 <a href="https://github.com/amio/TapTick">TapTick</a>.
+        Built with Swift &amp; SwiftUI.
+      </p>
+    </footer>
 
     <script>
-      const tabs = document.querySelectorAll(".tab");
-      let current = "apps";
+      /* ── Matrix rain — hotkey symbols ── */
+      ;(function () {
+        const canvas = document.getElementById("matrix-canvas")
+        const ctx = canvas.getContext("2d")
 
-      const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
+        const chars = [
+          "⌘", "⌥", "⌃", "⇧", "⌫", "⏎", "⇥", "⎋",
+          // "F1", "F2", "F3", "F4", "F5",
+          "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+          "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
+        ]
+
+        const FS = 14
+        const COL_W = 32   // horizontal cell size (replaces colW)
+        const COL_H = 10
+        const BG_CHAR_ALPHA = 0.18
+
+        // Each "row" is a horizontal stream — exactly like a vertical drop but sideways.
+        // `pos` is the leading-edge column index (can be fractional for smooth motion).
+        // `dir`: +1 flows right, -1 flows left.
+        let rows = []
+        let grid = []
+        let totalCols = 0
+
+        function resize() {
+          canvas.width  = canvas.offsetWidth
+          canvas.height = canvas.offsetHeight
+          const numRows = Math.floor(canvas.height / COL_H)
+          totalCols = Math.ceil(canvas.width / COL_W)
+
+          grid = Array.from({ length: numRows }, () =>
+            Array.from({ length: totalCols }, () => ({
+              char: chars[Math.floor(Math.random() * chars.length)],
+              light: 0
+            }))
+          )
+
+          rows = Array.from({ length: numRows }, (_, i) => {
+            const dir = Math.random() < 0.5 ? 1 : -1
+            return {
+              y:   i * COL_W + COL_W,          // baseline y for this row
+              pos: Math.random() * totalCols * (dir === 1 ? -1 : 1),
+              dir,
+              speed: 0.4 + Math.random() * 0.35
+            }
+          })
+        }
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.font = `${FS}px -apple-system, "SF Pro Display", sans-serif`
+
+          // update and draw grid
+          for (let r = 0; r < grid.length; r++) {
+            for (let c = 0; c < grid[r].length; c++) {
+              const cell = grid[r][c]
+              if (cell.light > 0) {
+                cell.light -= 0.05 // the fade-out speed of the trail
+                if (cell.light < 0) cell.light = 0
+              }
+              const alpha = BG_CHAR_ALPHA + cell.light * 0.5
+              ctx.fillStyle = `rgba(0, 100, 200, ${alpha})`
+              ctx.fillText(cell.char, c * COL_W, r * COL_W + COL_W)
+            }
+          }
+
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i]
+            const col = Math.floor(row.pos)
+
+            if (col >= 0 && col < totalCols && grid[i] && grid[i][col]) {
+              grid[i][col].char = chars[Math.floor(Math.random() * chars.length)]
+              grid[i][col].light = 1.0
+            }
+
+            row.pos += row.dir * row.speed
+            if (row.dir === 1 && col > totalCols && Math.random() > 0.975) {
+              row.pos = 0
+            } else if (row.dir === -1 && col < 0 && Math.random() > 0.975) {
+              row.pos = totalCols
+            }
+          }
+        }
+
+        resize()
+        window.addEventListener("resize", resize, { passive: true })
+        setInterval(draw, 50)
+      })()
+
+      /* ── Nav scroll effect ── */
+      const nav = document.getElementById("nav")
+      window.addEventListener("scroll", () => {
+        nav.classList.toggle("scrolled", window.scrollY > 10)
+      }, { passive: true })
+
+      /* ── Screenshot tab hover ── */
+      const tabs = document.querySelectorAll(".preview-tab")
+      let current = "apps"
+
+      const isMobile = () => window.matchMedia("(max-width: 767px)").matches
 
       tabs.forEach((tab) => {
         tab.addEventListener("mouseenter", () => {
-          if (!isMobile()) switchTo(tab.dataset.target);
-        });
+          if (!isMobile()) switchTo(tab.dataset.target)
+        })
         tab.addEventListener("click", () => {
-          switchTo(tab.dataset.target);
-        });
-      });
+          switchTo(tab.dataset.target)
+        })
+      })
 
       function switchTo(target) {
-        if (target === current) return;
-
-        const prevSlide = document.getElementById("slide-" + current);
-        const nextSlide = document.getElementById("slide-" + target);
-
+        if (target === current) return
+        const prevSlide = document.getElementById("slide-" + current)
+        const nextSlide = document.getElementById("slide-" + target)
         tabs.forEach((t) => {
-          const isActive = t.dataset.target === target;
-          t.classList.toggle("active", isActive);
-          t.setAttribute("aria-selected", String(isActive));
-        });
-
-        prevSlide.classList.remove("active");
-        nextSlide.classList.add("active");
-
-        current = target;
+          const isActive = t.dataset.target === target
+          t.classList.toggle("active", isActive)
+          t.setAttribute("aria-selected", String(isActive))
+        })
+        prevSlide.classList.remove("active")
+        nextSlide.classList.add("active")
+        current = target
       }
+
+      /* ── Scroll-triggered reveal ── */
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("visible")
+              observer.unobserve(e.target)
+            }
+          })
+        },
+        { threshold: 0.1 }
+      )
+
+      document.querySelectorAll(".reveal").forEach((el) => observer.observe(el))
     </script>
   </body>
 </html>
