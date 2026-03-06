@@ -1,14 +1,14 @@
-# TapTik
+# TapTick
 
 An Application Launcher, and Shell Script Runner. A Minimal hotkey manager for Mac.
 
 ![](./public/screenshot-apps.png)
 
-Install from [GitHub Releases](https://github.com/amio/TapTik/releases)
+Install from [GitHub Releases](https://github.com/amio/TapTick/releases)
 
 ## Development
 
-TapTik is built with SwiftUI and Swift 6, targeting macOS 15+.
+TapTick is built with SwiftUI and Swift 6, targeting macOS 15+.
 
 Use `make` commands for common tasks:
 

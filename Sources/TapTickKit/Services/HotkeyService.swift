@@ -136,7 +136,7 @@ private struct Registration {
 }
 
 /// Four-char code used to namespace our hot-key IDs within the system.
-/// 'TTgc' — TapTik global combos.
+/// 'TTgc' — TapTick global combos.
 private let hotKeySignature: OSType = 0x5454_6763
 
 // MARK: - Carbon Event Handler (C function pointer)

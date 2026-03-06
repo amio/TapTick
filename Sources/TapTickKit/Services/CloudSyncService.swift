@@ -4,7 +4,7 @@ import os.log
 
 /// Manages bidirectional iCloud Drive sync for shortcut data.
 ///
-/// Uses the iCloud ubiquity container (`iCloud.com.taptik.app`) to store a shared
+/// Uses the iCloud ubiquity container (`iCloud.com.taptick.app`) to store a shared
 /// `shortcuts.json` file. Monitors the file for external changes (pushed from other
 /// devices) via `NSMetadataQuery` and merges them into the local store.
 ///
@@ -37,10 +37,10 @@ public final class CloudSyncService: @unchecked Sendable {
     // MARK: - Private
 
     private static let enabledKey = "iCloudSyncEnabled"
-    private static let containerID = "iCloud.com.taptik.app"
+    private static let containerID = "iCloud.com.taptick.app"
     private static let fileName = "shortcuts.json"
 
-    private let logger = Logger(subsystem: "com.taptik.app", category: "CloudSync")
+    private let logger = Logger(subsystem: "com.taptick.app", category: "CloudSync")
     private var metadataQuery: NSMetadataQuery?
     private var containerURL: URL?
 

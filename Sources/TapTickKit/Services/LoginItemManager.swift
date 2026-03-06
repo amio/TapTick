@@ -22,7 +22,7 @@ public final class LoginItemManager: @unchecked Sendable {
                 try service.register()
             }
         } catch {
-            print("TapTik: Failed to toggle login item: \(error)")
+            print("TapTick: Failed to toggle login item: \(error)")
         }
         refreshStatus()
     }

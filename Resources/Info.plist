@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>TapTik</string>
+    <string>TapTick</string>
     <key>CFBundleDisplayName</key>
-    <string>TapTik</string>
+    <string>TapTick</string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleVersion</key>
@@ -21,7 +21,7 @@
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright 2026 TapTik. All rights reserved.</string>
+    <string>Copyright 2026 TapTick. All rights reserved.</string>
 
     <!-- Required by App Store Connect / notarization submission:
          false = the app does NOT use non-exempt encryption (no export compliance review needed) -->
@@ -30,7 +30,7 @@
 
     <!-- Sparkle auto-update: appcast feed URL hosted on GitHub Pages -->
     <key>SUFeedURL</key>
-    <string>https://amio.github.io/TapTik/appcast.xml</string>
+    <string>https://amio.github.io/TapTick/appcast.xml</string>
 
     <!-- Sparkle auto-update: EdDSA (ed25519) public key for verifying update signatures.
          Generate a keypair with: ./bin/generate_keys (from Sparkle distribution).

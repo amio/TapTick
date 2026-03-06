@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import TapTikKit
+@testable import TapTickKit
 
 @Suite("ShortcutStore")
 struct ShortcutStoreTests {
@@ -8,7 +8,7 @@ struct ShortcutStoreTests {
     /// Create a store backed by a temporary directory.
     private func makeStore() -> ShortcutStore {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("TapTikTests-\(UUID().uuidString)")
+            .appendingPathComponent("TapTickTests-\(UUID().uuidString)")
         return ShortcutStore(directory: dir)
     }
 
@@ -126,7 +126,7 @@ struct ShortcutStoreTests {
     @Test("Persistence round-trip")
     func persistenceRoundTrip() {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("TapTikTests-\(UUID().uuidString)")
+            .appendingPathComponent("TapTickTests-\(UUID().uuidString)")
 
         let store1 = ShortcutStore(directory: dir)
         store1.add(makeSampleShortcut(name: "Persisted"))

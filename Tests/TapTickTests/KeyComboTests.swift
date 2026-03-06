@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import TapTikKit
+@testable import TapTickKit
 
 // MARK: - KeyCombo Tests
 

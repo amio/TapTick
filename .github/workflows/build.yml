@@ -1,5 +1,5 @@
 # =============================================================================
-# TapTik — Build & Distribute
+# TapTick — Build & Distribute
 #
 # Triggers:
 #   • push to main       → build + test only (no signing/notarization)
@@ -27,8 +27,8 @@ on:
   workflow_dispatch:
 
 env:
-  SCHEME:    TapTik
-  BUNDLE_ID: com.taptik.app
+  SCHEME:    TapTick
+  BUNDLE_ID: com.taptick.app
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -140,10 +140,10 @@ jobs:
           SPARKLE_ED_PUBLIC_KEY: ${{ secrets.SPARKLE_ED_PUBLIC_KEY }}
         run: |
           xcodebuild archive \
-            -project     TapTik.xcodeproj \
+            -project     TapTick.xcodeproj \
             -scheme      "$SCHEME" \
             -configuration Release \
-            -archivePath "$RUNNER_TEMP/TapTik.xcarchive" \
+            -archivePath "$RUNNER_TEMP/TapTick.xcarchive" \
             MARKETING_VERSION="$VERSION" \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             CODE_SIGN_STYLE=Manual \
@@ -155,7 +155,7 @@ jobs:
       - name: Export archive
         run: |
           xcodebuild -exportArchive \
-            -archivePath      "$RUNNER_TEMP/TapTik.xcarchive" \
+            -archivePath      "$RUNNER_TEMP/TapTick.xcarchive" \
             -exportPath       "$RUNNER_TEMP/export" \
             -exportOptionsPlist Resources/exportOptions.plist
 
@@ -167,12 +167,12 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID:      ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          APP="$RUNNER_TEMP/export/TapTik.app"
+          APP="$RUNNER_TEMP/export/TapTick.app"
 
           # Zip for submission (notarytool accepts .zip, .dmg, .pkg)
-          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/TapTik-notarize.zip"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/TapTick-notarize.zip"
 
-          xcrun notarytool submit "$RUNNER_TEMP/TapTik-notarize.zip" \
+          xcrun notarytool submit "$RUNNER_TEMP/TapTick-notarize.zip" \
             --apple-id  "$APPLE_ID" \
             --password  "$APPLE_APP_PASSWORD" \
             --team-id   "$APPLE_TEAM_ID" \
@@ -184,18 +184,18 @@ jobs:
 
       - name: Create DMG
         run: |
-          DMG_NAME="TapTik-$VERSION"
+          DMG_NAME="TapTick-$VERSION"
 
           create-dmg \
-            --volname        "TapTik $VERSION" \
+            --volname        "TapTick $VERSION" \
             --window-pos     200 120 \
             --window-size    660 400 \
             --icon-size      128 \
-            --icon           "TapTik.app" 180 170 \
-            --hide-extension "TapTik.app" \
+            --icon           "TapTick.app" 180 170 \
+            --hide-extension "TapTick.app" \
             --app-drop-link  480 170 \
             "$RUNNER_TEMP/${DMG_NAME}.dmg" \
-            "$RUNNER_TEMP/export/TapTik.app"
+            "$RUNNER_TEMP/export/TapTick.app"
 
           echo "DMG_PATH=$RUNNER_TEMP/${DMG_NAME}.dmg" >> "$GITHUB_ENV"
           echo "DMG_NAME=${DMG_NAME}"                  >> "$GITHUB_ENV"
@@ -218,7 +218,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            --title "TapTik ${{ env.VERSION }}" \
+            --title "TapTick ${{ env.VERSION }}" \
             --generate-notes \
             "${{ env.DMG_PATH }}#${{ env.DMG_NAME }}.dmg"
 
@@ -252,7 +252,7 @@ jobs:
           cp "${{ env.DMG_PATH }}" "$UPDATES_DIR/"
 
           # --- Fetch existing appcast (if any) so new items are appended ---
-          if curl -sfL "https://amio.github.io/TapTik/appcast.xml" -o "$UPDATES_DIR/appcast.xml" 2>/dev/null; then
+          if curl -sfL "https://amio.github.io/TapTick/appcast.xml" -o "$UPDATES_DIR/appcast.xml" 2>/dev/null; then
             echo "Fetched existing appcast.xml from GitHub Pages"
           else
             echo "No existing appcast found — will create a new one"
@@ -263,14 +263,14 @@ jobs:
           #   to form the <enclosure url="...">. Since each release tag has its own
           #   path on GitHub Releases, we use the tag-specific URL prefix.
           #   For the current release the resulting URL will be:
-          #     https://github.com/amio/TapTik/releases/download/vX.Y.Z/TapTik-X.Y.Z.dmg
+          #     https://github.com/amio/TapTick/releases/download/vX.Y.Z/TapTick-X.Y.Z.dmg
           #
           # The private key is passed via stdin with --ed-key-file - so the CI runner
           # never needs a Keychain entry. The secret is never written to disk.
           echo "$SPARKLE_ED_PRIVATE_KEY" | "$SPARKLE_BIN/generate_appcast" \
             --ed-key-file - \
-            --download-url-prefix "https://github.com/amio/TapTik/releases/download/${GITHUB_REF_NAME}/" \
-            --link "https://amio.github.io/TapTik/" \
+            --download-url-prefix "https://github.com/amio/TapTick/releases/download/${GITHUB_REF_NAME}/" \
+            --link "https://amio.github.io/TapTick/" \
             "$UPDATES_DIR"
 
           # --- Copy appcast into public/ for GitHub Pages deployment ---
@@ -283,7 +283,7 @@ jobs:
       - name: Update landing page
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          DOWNLOAD_URL="https://github.com/amio/TapTik/releases/download/${GITHUB_REF_NAME}/${{ env.DMG_NAME }}.dmg"
+          DOWNLOAD_URL="https://github.com/amio/TapTick/releases/download/${GITHUB_REF_NAME}/${{ env.DMG_NAME }}.dmg"
 
           sed -i '' "s|{{DOWNLOAD_URL}}|$DOWNLOAD_URL|g" public/index.html
           sed -i '' "s|{{VERSION}}|${{ env.VERSION }}|g" public/index.html

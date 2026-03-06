@@ -8,11 +8,11 @@
          the profile is created and added to the project.
     <key>com.apple.developer.icloud-container-identifiers</key>
     <array>
-        <string>iCloud.com.taptik.app</string>
+        <string>iCloud.com.taptick.app</string>
     </array>
     <key>com.apple.developer.ubiquity-container-identifiers</key>
     <array>
-        <string>iCloud.com.taptik.app</string>
+        <string>iCloud.com.taptick.app</string>
     </array>
     -->
 

@@ -1,4 +1,4 @@
-# DEVELOPMENT PROTOCOL — TapTik
+# DEVELOPMENT PROTOCOL — TapTick
 
 ## 1. Workflow & Strategy
 
@@ -66,25 +66,25 @@
 ## Core Tech Stack
 
 - **Language & UI**: Swift 6 (strict concurrency) + SwiftUI, targeting macOS 15+.
-- **Build System**: XcodeGen (`project.yml`) generates `TapTik.xcodeproj`; `Makefile` drives all dev/CI tasks.
-- **Package Structure**: SPM monorepo — `TapTikKit` library (`Sources/TapTikKit`) + `TapTik` app (`Sources/TapTik`).
-- **Auto-Update**: Sparkle 2 (`SPUStandardUpdaterController`) with EdDSA-signed appcast at `https://amio.github.io/TapTik/appcast.xml`.
+- **Build System**: XcodeGen (`project.yml`) generates `TapTick.xcodeproj`; `Makefile` drives all dev/CI tasks.
+- **Package Structure**: SPM monorepo — `TapTickKit` library (`Sources/TapTickKit`) + `TapTick` app (`Sources/TapTick`).
+- **Auto-Update**: Sparkle 2 (`SPUStandardUpdaterController`) with EdDSA-signed appcast at `https://amio.github.io/TapTick/appcast.xml`.
 - **CI**: GitHub Actions (`.github/workflows/build.yml`) — unit tests on every push; archive → notarize → DMG → GitHub Release on `v*` tags.
 
 ## Product Logic
 
 - **Global Hotkeys**: Carbon `RegisterEventHotKey` API (no Accessibility permission needed); each `KeyCombo` is registered individually and fires a targeted callback.
 - **Shortcuts**: Each `Shortcut` has a `KeyCombo`, a `ShortcutAction` (launch app / run inline script / run script file), and metadata (`isEnabled`, `createdAt`, `modifiedAt`, `lastTriggeredAt`).
-- **iCloud Sync**: Optional, uses ubiquity container `iCloud.com.taptik.app`; last-writer-wins merge by UUID + `modifiedAt`; currently disabled pending provisioning profile.
-- **Persistence**: Local JSON at `~/Library/Application Support/TapTik/shortcuts.json`; cloud mirror at `iCloud.com.taptik.app/Documents/shortcuts.json`.
+- **iCloud Sync**: Optional, uses ubiquity container `iCloud.com.taptick.app`; last-writer-wins merge by UUID + `modifiedAt`; currently disabled pending provisioning profile.
+- **Persistence**: Local JSON at `~/Library/Application Support/TapTick/shortcuts.json`; cloud mirror at `iCloud.com.taptick.app/Documents/shortcuts.json`.
 
 ## Component Map
 
-- **App entry point**: `Sources/TapTik/App/TapTikApp.swift` — `@main`, MenuBarExtra, Settings Window, environment wiring.
-- **Hotkey engine**: `Sources/TapTikKit/Services/HotkeyService.swift` — registration, Carbon event dispatch, `ShortcutExecutor` invocation.
-- **Data layer**: `Sources/TapTikKit/Services/ShortcutStore.swift` — CRUD, disk I/O, cloud sync coordination.
-- **Cloud sync**: `Sources/TapTikKit/Services/CloudSyncService.swift` — NSMetadataQuery monitoring, upload/download, merge algorithm.
-- **Action execution**: `Sources/TapTikKit/Services/ShortcutExecutor.swift` — app toggle/launch, inline script, script file.
-- **Settings UI**: `Sources/TapTikKit/Views/SettingsView.swift` (sidebar nav) → `GeneralSettingsView`, `ApplicationsView`, `ScriptsView`.
-- **Menu bar UI**: `Sources/TapTikKit/Views/MenuBarView.swift` — dropdown with shortcut rows, settings/quit buttons.
-- **Bundle IDs**: App `com.taptik.app`; iCloud container `iCloud.com.taptik.app`.
+- **App entry point**: `Sources/TapTick/App/TapTickApp.swift` — `@main`, MenuBarExtra, Settings Window, environment wiring.
+- **Hotkey engine**: `Sources/TapTickKit/Services/HotkeyService.swift` — registration, Carbon event dispatch, `ShortcutExecutor` invocation.
+- **Data layer**: `Sources/TapTickKit/Services/ShortcutStore.swift` — CRUD, disk I/O, cloud sync coordination.
+- **Cloud sync**: `Sources/TapTickKit/Services/CloudSyncService.swift` — NSMetadataQuery monitoring, upload/download, merge algorithm.
+- **Action execution**: `Sources/TapTickKit/Services/ShortcutExecutor.swift` — app toggle/launch, inline script, script file.
+- **Settings UI**: `Sources/TapTickKit/Views/SettingsView.swift` (sidebar nav) → `GeneralSettingsView`, `ApplicationsView`, `ScriptsView`.
+- **Menu bar UI**: `Sources/TapTickKit/Views/MenuBarView.swift` — dropdown with shortcut rows, settings/quit buttons.
+- **Bundle IDs**: App `com.taptick.app`; iCloud container `iCloud.com.taptick.app`.

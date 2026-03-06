@@ -1,6 +1,6 @@
 import XCTest
 
-final class TapTikUITests: XCTestCase {
+final class TapTickUITests: XCTestCase {
 
     var app: XCUIApplication!
 
@@ -18,7 +18,7 @@ final class TapTikUITests: XCTestCase {
 
     func testSettingsWindowOpens() throws {
         // The settings window should be available
-        let window = app.windows["TapTik Settings"]
+        let window = app.windows["TapTick Settings"]
         // Give it a moment to appear
         let exists = window.waitForExistence(timeout: 5)
         // Note: The window might not open automatically since it's a menu bar app.
@@ -28,7 +28,7 @@ final class TapTikUITests: XCTestCase {
     }
 
     func testEmptyStateShowsPlaceholder() throws {
-        let window = app.windows["TapTik Settings"]
+        let window = app.windows["TapTick Settings"]
         if window.waitForExistence(timeout: 5) {
             // Should show "No Shortcut Selected" or similar empty state
             let noSelection = window.staticTexts["No Shortcut Selected"]
@@ -39,7 +39,7 @@ final class TapTikUITests: XCTestCase {
     }
 
     func testAddButtonExists() throws {
-        let window = app.windows["TapTik Settings"]
+        let window = app.windows["TapTick Settings"]
         if window.waitForExistence(timeout: 5) {
             let addButton = window.buttons["Add Shortcut"]
             if addButton.waitForExistence(timeout: 3) {

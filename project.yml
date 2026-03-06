@@ -1,6 +1,6 @@
-name: TapTik
+name: TapTick
 options:
-  bundleIdPrefix: com.taptik
+  bundleIdPrefix: com.taptick
   deploymentTarget:
     macOS: "15.0"
   xcodeVersion: "16.0"
@@ -21,30 +21,30 @@ settings:
       ENABLE_HARDENED_RUNTIME: true
 
 packages:
-  TapTikKit:
+  TapTickKit:
     path: .
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.7.0"
 
 targets:
-  TapTik:
+  TapTick:
     type: application
     platform: macOS
     sources:
-      - path: Sources/TapTik
+      - path: Sources/TapTick
       - path: Resources/Assets.xcassets
     dependencies:
-      - package: TapTikKit
-        product: TapTikKit
+      - package: TapTickKit
+        product: TapTickKit
       - package: Sparkle
         product: Sparkle
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.taptik.app
-        PRODUCT_NAME: TapTik
+        PRODUCT_BUNDLE_IDENTIFIER: com.taptick.app
+        PRODUCT_NAME: TapTick
         INFOPLIST_FILE: Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Resources/TapTik.entitlements
+        CODE_SIGN_ENTITLEMENTS: Resources/TapTick.entitlements
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "13"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -56,32 +56,32 @@ targets:
           - $(inherited)
           - "@executable_path/../Frameworks"
 
-  TapTikUITests:
+  TapTickUITests:
     type: bundle.ui-testing
     platform: macOS
     sources:
-      - path: Tests/TapTikUITests
+      - path: Tests/TapTickUITests
     dependencies:
-      - target: TapTik
+      - target: TapTick
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.taptik.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.taptick.uitests
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: true
-        TEST_TARGET_NAME: TapTik
+        TEST_TARGET_NAME: TapTick
 
 schemes:
-  TapTik:
+  TapTick:
     build:
       targets:
-        TapTik: all
-        TapTikUITests: [test]
+        TapTick: all
+        TapTickUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - name: TapTikUITests
+        - name: TapTickUITests
           parallelizable: false
     archive:
       config: Release

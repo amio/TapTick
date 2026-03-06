@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import TapTikKit
+import TapTickKit
 
 @MainActor
 final class AppState: ObservableObject {
@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             // Close the settings window automatically created by SwiftUI on subsequent launches
             for window in NSApp.windows {
-                if window.title == "TapTik Settings" || window.identifier?.rawValue == "settings" {
+                if window.title == "TapTick Settings" || window.identifier?.rawValue == "settings" {
                     window.close()
                 }
             }
@@ -42,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-/// TapTik — a utility app for launching apps and running scripts via global hotkeys.
+/// TapTick — a utility app for launching apps and running scripts via global hotkeys.
 ///
 /// Architecture:
 /// - The app lives primarily in the menu bar (MenuBarExtra).
@@ -51,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// - Login item is managed through ServiceManagement.
 /// - Shortcuts are optionally synced across Macs via iCloud Drive.
 @main
-struct TapTikApp: App {
+struct TapTickApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var appState = AppState.shared
     @Environment(\.openWindow) private var openWindow
@@ -70,7 +70,7 @@ struct TapTikApp: App {
 
     var body: some Scene {
         // MARK: - Menu Bar
-        MenuBarExtra("TapTik", systemImage: "keyboard.badge.ellipsis") {
+        MenuBarExtra("TapTick", systemImage: "keyboard.badge.ellipsis") {
             MenuBarView()
                 .environment(store)
                 .environment(hotkeyService)
@@ -80,7 +80,7 @@ struct TapTikApp: App {
         }
 
         // MARK: - Settings Window
-        Window("TapTik Settings", id: "settings") {
+        Window("TapTick Settings", id: "settings") {
             SettingsView()
                 .environment(store)
                 .environment(hotkeyService)
