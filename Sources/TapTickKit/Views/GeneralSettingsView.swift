@@ -187,13 +187,17 @@ struct GeneralSettingsView: View {
     private var versionFooterSection: some View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        let label = version.hasSuffix("+b\(build)") ? "TapTick \(version)" : "TapTick \(version) (\(build))"
         return Section {
-            Text("TapTick \(version) (\(build))")
+            Text(label)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
+                .listSectionSeparator(.hidden)
         }
+        .listSectionSeparator(.hidden)
+        .background(Color.clear)
     }
 
     // MARK: - Dock Icon
