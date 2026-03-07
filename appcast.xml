@@ -3,6 +3,15 @@
     <channel>
         <title>KeyMagic</title>
         <item>
+            <title>1.0.0+b18</title>
+            <pubDate>Sat, 07 Mar 2026 06:26:49 +0000</pubDate>
+            <link>https://amio.github.io/TapTick/</link>
+            <sparkle:version>18</sparkle:version>
+            <sparkle:shortVersionString>1.0.0+b18</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.0.0+b18/TapTick-1.0.0+b18.dmg" length="1456258" type="application/octet-stream" sparkle:edSignature="8sceT8qhCeKUWlfwXEFaw5T9UFwf851xEcpGaYcjXBEyxe2ppcy8C6MznpeL5iLvyJ/sCo3r5VfglGw56AF0Aw=="/>
+        </item>
+        <item>
             <title>1.0.0+b17</title>
             <pubDate>Fri, 06 Mar 2026 09:41:48 +0000</pubDate>
             <link>https://amio.github.io/TapTick/</link>
@@ -19,15 +28,6 @@
             <sparkle:shortVersionString>1.0.0+b16</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/amio/TapTick/releases/download/v1.0.0+b16/TapTick-1.0.0+b16.dmg" length="4596905" type="application/octet-stream" sparkle:edSignature="Cl+gBXZpW5thumPXoKXlGCWzAwkbOQjhBJr7qZj5Bun78Q8fcBW6rIziVAjROuGzCKo+vTDYgPAUJoECNnDdCA=="/>
-        </item>
-        <item>
-            <title>1.0.0+b15</title>
-            <pubDate>Fri, 06 Mar 2026 03:05:55 +0000</pubDate>
-            <link>https://amio.github.io/TapTick/</link>
-            <sparkle:version>15</sparkle:version>
-            <sparkle:shortVersionString>1.0.0+b15</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.0.0+b15/TapTick-1.0.0+b15.dmg" length="4609622" type="application/octet-stream" sparkle:edSignature="US5/CImDbOtQafUiBdgoMWljcswZzRJtBKI0rmzPOlQAvM5beUofRs17XR+NmY/w1WEbBi9f1l285gnWy1qvBA=="/>
         </item>
     </channel>
 </rss>
