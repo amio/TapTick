@@ -264,7 +264,7 @@ struct ScriptRunner: Sendable {
         let directoryError = posix_spawn_file_actions_addchdir(&actions, directory.path)
         guard directoryError == 0 else { throw POSIXError(POSIXErrorCode(rawValue: directoryError) ?? .EIO) }
 
-        let argv = [executable.path].map { strdup($0) } + [nil]
+        let argv = [strdup(executable.path), nil]
         let envp = environment.map { strdup("\($0.key)=\($0.value)") } + [nil]
         defer {
             argv.forEach { free($0) }
