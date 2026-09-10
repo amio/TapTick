@@ -21,7 +21,7 @@ The user explicitly accepted native output granularity: stream incremental text 
 
 ### Interaction and prompt
 
-Keep the existing editor mounted. Generate toggles a panel above it, with a plain multiline prompt editor, a short placeholder hint, and Send/Stop. The remaining text-editing height is divided 1:2 between prompt and script. Collapsing the panel preserves the prompt for the selected script. Changing scripts resets the prompt. Remember the selected provider as an app-local preference; never silently send to a different provider when the chosen one becomes unavailable.
+Keep the existing editor mounted. Generate toggles a panel above it, with a plain multiline prompt editor and Send/Stop inside its lower-right corner. Reserve space for the controls so they never cover prompt text. The remaining text-editing height is divided 1:2 between prompt and script. Collapsing the panel preserves the prompt for the selected script. Changing scripts resets the prompt. Remember the selected provider as an app-local preference; never silently send to a different provider when the chosen one becomes unavailable.
 
 Default prompt:
 

@@ -878,7 +878,7 @@ struct ScriptEditView: View {
             GeometryReader { geometry in
                 VStack(spacing: 8) {
                     if isPromptExpanded {
-                        promptPanel(textHeight: max(40, (geometry.size.height - 40) / 3))
+                        promptPanel(textHeight: max(80, (geometry.size.height - 40) / 3))
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
                     ScriptTextEditor(
@@ -901,40 +901,41 @@ struct ScriptEditView: View {
 
     private func promptPanel(textHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text("Prompt")
-                    .font(.caption.weight(.medium))
-                Text("{{script}} inserts the current script")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-                if generation.isGenerating {
-                    ProgressView().controlSize(.small)
-                    Button("Stop", action: cancelGeneration)
-                } else {
-                    Button("Send", systemImage: "arrow.up") { sendGeneration() }
-                        .disabled(
-                            !generation.status(for: selectedProvider).isAvailable
-                                || isRunning
-                                || generationPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        )
-                        .buttonStyle(.borderedProminent)
+            Text("Prompt")
+                .font(.caption.weight(.medium))
+                .frame(height: 24)
+            VStack(spacing: 0) {
+                TextEditor(text: $generationPrompt)
+                    .font(.system(.body, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .padding(6)
+                    .disabled(generation.isGenerating)
+                    .accessibilityLabel("Script generation prompt")
+                HStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    if generation.isGenerating {
+                        ProgressView().controlSize(.small)
+                        Button("Stop", action: cancelGeneration)
+                    } else {
+                        Button("Send", systemImage: "arrow.up") { sendGeneration() }
+                            .disabled(
+                                !generation.status(for: selectedProvider).isAvailable
+                                    || isRunning
+                                    || generationPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            )
+                            .buttonStyle(.borderedProminent)
+                    }
                 }
+                .controlSize(.small)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 8)
             }
-            .controlSize(.small)
-            .frame(height: 24)
-            TextEditor(text: $generationPrompt)
-                .font(.system(.body, design: .monospaced))
-                .scrollContentBackground(.hidden)
-                .padding(6)
-                .background(Color(.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(.separatorColor), lineWidth: 1)
-                }
-                .frame(height: textHeight)
-                .disabled(generation.isGenerating)
-                .accessibilityLabel("Script generation prompt")
+            .frame(height: textHeight)
+            .background(Color(.textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color(.separatorColor), lineWidth: 1)
+            }
         }
     }
 
@@ -971,13 +972,17 @@ struct ScriptEditView: View {
     }
 
     private var generateButton: some View {
-        HStack(spacing: 0) {
+        ControlGroup {
             Button {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
                     isPromptExpanded.toggle()
                 }
             } label: {
-                Label("Generate", systemImage: "sparkles")
+                // ControlGroup can reduce a Label to its icon; keep the primary action's title visible.
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                    Text("Generate")
+                }
             }
             .disabled(generation.isGenerating)
             .help("Show the prompt for creating or editing this script")
@@ -1010,6 +1015,7 @@ struct ScriptEditView: View {
             .accessibilityLabel("Script generation provider")
         }
         .controlSize(.small)
+        .fixedSize()
     }
 
     private var logsButton: some View {
