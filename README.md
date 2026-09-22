@@ -28,39 +28,22 @@ Install from [GitHub Releases](https://github.com/amio/TapTick/releases)
 
 ## Development
 
-TapTick is built with SwiftUI and Swift 6, targeting macOS 26+.
+TapTick uses SwiftUI and Swift 6, targets macOS 26+, and generates its Xcode 27
+project from [project.yml](project.yml). Install Xcode and Homebrew, then:
 
-Use `make` commands for common tasks:
-
-```
-help           Show available targets
-setup          Install required tools and generate Xcode project
-gen            Regenerate Xcode project from project.yml (run after editing project.yml)
-open           Regenerate and open project in Xcode
-build          Build app — Debug (via xcodebuild)
-release        Build app — Release (via xcodebuild)
-run            Build (Debug), replace the running instance, and launch `TapTick Dev.app`
-test           Run unit tests via xcodebuild
-uitest         Run UI tests via xcodebuild
-test-all       Run all tests (unit + UI)
-format         Auto-format all Swift source files with swift-format
-lint           Lint Swift source files with swift-format (no writes)
-version-patch  Bump patch version (1.0.0 → 1.0.1), commit and tag
-version-minor  Bump minor version (1.0.0 → 1.1.0), commit and tag
-version-major  Bump major version (1.0.0 → 2.0.0), commit and tag
-version-build  Bump build number only, no semver change, commit and tag
-archive        Create a Release archive (.xcarchive) signed with Developer ID
-export         Export archive as a Developer ID-signed .app ready for notarization
-notarize       Submit exported .app to Apple Notary Service and staple the ticket
-dist           Full distribution pipeline: archive → export → notarize → staple → DMG
-dmg            Package the notarized .app into a distributable DMG
-clean          Remove build artifacts (keeps .xcodeproj)
-reset          Full reset — also removes .xcodeproj (run 'make gen' afterwards)
-ci             Full CI pipeline: lint → unit tests → release build
+```bash
+make setup      # Install missing tools and generate the Xcode project
+make run        # Build and launch TapTick Dev, replacing its running instance
 ```
 
-Repository utility scripts:
+After Swift changes, run `make format`, `make lint`, `make test`, and the relevant
+build (`make build` for Debug or `make release` for Release). Unit tests use
+`make test`; `make uitest` additionally drives the application UI.
 
-```
-scripts/focused-app-memory.sh  Print the current frontmost app memory usage, including all descendant processes
-```
+Run `make gen` after changing `project.yml`; generated Xcode metadata is not
+maintained by hand. Use `make open` to regenerate and open the project, and
+`make help` for all available targets.
+
+Debug uses the separate `TapTick Dev` identity and requires local development
+signing credentials. See the [release guide](release.md) for signing setup,
+versioning, CI behavior, notarization, and Sparkle updates.

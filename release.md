@@ -1,359 +1,199 @@
 # Release Guide
 
-TapTick is distributed directly (outside the Mac App Store) via Developer ID
-signing and Apple Notarization. This document covers every path from local dev
-builds to a fully notarized DMG ready for users to download.
+TapTick ships outside the Mac App Store as a Developer ID-signed app, notarized
+and stapled before DMG packaging. [project.yml](project.yml) owns versions and
+build settings; the [Makefile](Makefile) owns local commands;
+[build.yml](.github/workflows/build.yml) owns CI distribution.
 
----
+## Development and signing
 
-## Prerequisites
+Install Xcode and Homebrew, then run `make setup`. DMG packaging additionally
+requires `brew install create-dmg`. Use `make help` for the complete target list.
 
-### Tools
+| Build path | App / bundle identifier | Signing |
+| --- | --- | --- |
+| `make build`, `make run` | TapTick Dev / `com.taptick.app.dev` | Automatic, Apple Development |
+| `make release` | TapTick / `com.taptick.app` | Automatic, Apple Development |
+| `make archive`, `make dist`, CI distribution | TapTick / `com.taptick.app` | Manual Developer ID Application override at archive time |
 
-```bash
-make setup          # installs xcodegen, swift-format, xcbeautify via Homebrew
-brew install create-dmg   # needed for DMG packaging (not included in setup)
-```
+Local app builds need a usable Apple Development identity for the configured
+team. Debug and Release have separate Application Support directories and macOS
+privacy identities. `make run` replaces only the Debug instance.
 
-### Apple Developer Account
+`make release` validates a Release build; use `make dist` for a notarized DMG.
+Unit tests run with signing disabled through `make test`. `make ci` runs lint,
+unit tests, and a Release build locally; it does not publish anything.
 
-You need a paid Apple Developer Program membership (USD 99/yr). Log in at
-[developer.apple.com](https://developer.apple.com).
+## Versions and CI triggers
 
----
+`MARKETING_VERSION` in `project.yml` must be `X.Y.Z`, and
+`CURRENT_PROJECT_VERSION` must be an integer. Run `make gen` after changing
+project settings. Never maintain generated Xcode metadata by hand.
 
-## Signing Architecture
+The version targets update `project.yml`, regenerate the project, commit, and
+create an annotated tag:
 
-| Configuration | Signing Style | Identity | Used For |
-|---|---|---|---|
-| Debug | Automatic | Apple Development | Daily dev, `make build` |
-| Release (local) | Manual (CLI override) | Developer ID Application | `make archive` / `make dist` |
-| Release (CI) | Manual (CLI override) | Developer ID Application | GitHub Actions |
+- `make version-patch`, `make version-minor`, or `make version-major` increments
+  the chosen version component and build number, then tags `vX.Y.Z`.
+- `make version-build` increments only the build number and tags `vX.Y.Z+bN`.
 
-`project.yml` always stores `Apple Development` as the base identity.
-The `Developer ID Application` identity is injected at build time via
-`xcodebuild` command-line overrides — this is necessary because Xcode's
-Automatic signing mode and Developer ID are mutually exclusive.
+Use these targets from a clean working tree with no unrelated staged changes.
+They do not push. Push the resulting commit and its exact tag when ready to
+publish. CI rejects a release tag unless it matches either `vX.Y.Z` or
+`vX.Y.Z+bN` from the tagged revision's project settings.
 
-### iCloud Entitlements
+| Build & Distribute trigger | Result |
+| --- | --- |
+| Pull request | Unit tests |
+| `v*` tag push | Unit tests, signed/notarized DMG, GitHub Release, appcast, landing page |
+| Manual dispatch, default inputs | Unit tests only |
+| Manual dispatch with `build_distribution` enabled | Unit tests and signed/notarized DMG artifact; no GitHub Release or appcast publication |
+| Plain push to `main` | No Build & Distribute run |
 
-The iCloud sync entitlements (`com.apple.developer.icloud-container-identifiers`
-and `com.apple.developer.ubiquity-container-identifiers`) are currently
-**commented out** in `Resources/TapTick.entitlements`. Developer ID + iCloud
-requires a provisioning profile explicitly created in the Developer Portal with
-both the App ID and iCloud container registered. Until that profile exists,
-enabling those entitlements will cause `xcodebuild archive` to fail.
+For manual dispatch, `revision` accepts a full commit SHA, branch, or tag; blank
+uses the selected branch. Manual artifacts include the project version, build
+number, and short SHA (`X.Y.Z+bN-dev-SHA`). DMG artifacts remain downloadable
+from the Actions run for 30 days.
 
-To re-enable iCloud for distribution, see the [iCloud section](#re-enabling-icloud-sync) below.
+## Local distribution
 
----
-
-## Build Scenarios
-
-### 1. Local Debug Build (daily development)
-
-No signing setup required. Xcode manages everything automatically.
-The debug variant deliberately launches as `TapTick Dev.app` with bundle
-identifier `com.taptick.app.dev`, so its TCC permissions and local state stay
-separate from the notarized release app.
-
-```bash
-make build      # Debug build via xcodebuild
-make run        # Debug build + replace the running Debug instance
-open TapTick.xcodeproj   # or open in Xcode and press ⌘R
-```
-
-### 2. Local Release — Full Distribution Build
-
-Produces a notarized, stapled DMG ready to hand to users.
+Prepare the signing certificate, notarization profile, and Sparkle public key
+described below, then run:
 
 ```bash
+make gen
 make dist
 ```
 
-Pipeline: `archive` → `export` → `notarize` → `staple` → `dmg`
+The pipeline archives to `build/TapTick.xcarchive`, exports to
+`build/export/TapTick.app`, submits that app for notarization, staples its ticket,
+and packages `build/TapTick.dmg`. Run the pipeline sequentially, without `-j`.
 
-Output: `build/TapTick.dmg`
+For individual steps, `make export` also runs `make archive`. `make notarize`
+requires an existing exported app; `make dmg` requires that app to have already
+been notarized and stapled. Export uses
+[Resources/exportOptions.plist](Resources/exportOptions.plist); its team must
+match the archive's signing team. Local distribution does not publish a release
+or update feed.
 
-Requires the one-time Keychain profile setup described below.
+### Certificate and notarization profile
 
-Individual steps can also be run in isolation:
+Use an Apple Developer Program account with a Developer ID Application
+certificate and its private key installed in the login Keychain. Certificates
+can be managed through Xcode's account settings. Inspect available identities:
 
 ```bash
-make archive    # .xcarchive signed with Developer ID
-make export     # export .xcarchive → .app (uses Resources/exportOptions.plist)
-make notarize   # submit to Apple Notary Service, staple ticket
-make dmg        # package .app into DMG
+security find-identity -v -p codesigning
 ```
 
-### 3. Xcode Archive (GUI alternative to `make dist`)
-
-If you prefer not to use the terminal for releases:
-
-1. Product → Archive
-2. Distribute App → Developer ID → Upload → Automatically notarize
-3. Export the stapled `.app`
-4. Run `create-dmg` manually or use `make dmg` (assumes `.app` is at `build/export/TapTick.app`)
-
-### 4. CI — GitHub Actions
-
-Triggered automatically on `v*` tag push or via manual `workflow_dispatch`.
-See `.github/workflows/build.yml`.
+Store notarization credentials interactively; supply the Apple ID, developer
+team ID, and an app-specific password when prompted:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+xcrun notarytool store-credentials "TapTick"
 ```
 
-The DMG artifact is uploaded to the Actions run page (retained 30 days) and
-can be downloaded from Actions → the run → Artifacts.
+The profile name matches the Makefile's `NOTARIZE_PROFILE`. A different profile
+can be selected with `make dist NOTARIZE_PROFILE=MyProfile`. CI uses its own
+secrets rather than this local Keychain profile.
 
----
+### Sparkle keys
 
-## One-Time Local Setup
-
-### Step 1 — Developer ID Application Certificate
-
-1. Open Xcode → Settings → Accounts → select your Apple ID → Manage Certificates
-2. Click `+` → Developer ID Application
-3. Xcode creates and installs the certificate in your login Keychain
-
-Verify it is present:
+Sparkle is exactly pinned to **2.9.6** in [Package.swift](Package.swift),
+`project.yml`, and the CI tools download. Keep all three aligned when upgrading.
+Use the matching [Sparkle release](https://github.com/sparkle-project/Sparkle/releases/tag/2.9.6)
+for its CLI tools. In the extracted tools directory, the initial setup is:
 
 ```bash
-security find-identity -v -p codesigning | grep "Developer ID Application"
-```
-
-### Step 2 — Notarization Keychain Profile
-
-Apple Notarization requires an App-specific password (your main Apple ID
-password cannot be used).
-
-**Get an App-specific password:**
-
-1. Go to [appleid.apple.com](https://appleid.apple.com)
-2. Sign In → Sign-In and Security → App-Specific Passwords → Generate
-3. Name it `TapTick Notarization`, copy the generated password (`xxxx-xxxx-xxxx-xxxx`)
-
-**Store it in Keychain:**
-
-```bash
-xcrun notarytool store-credentials "TapTick" \
-  --apple-id  you@example.com \
-  --team-id   3FKXTCP8JU \
-  --password  "xxxx-xxxx-xxxx-xxxx"
-```
-
-The profile name `TapTick` matches `NOTARIZE_PROFILE` in the Makefile.
-To use a different profile name:
-
-```bash
-make dist NOTARIZE_PROFILE=MyProfile
-```
-
----
-
-## CI Setup — GitHub Secrets
-
-Navigate to: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
-
-| Secret | Description | How to get it |
-|---|---|---|
-| `APPLE_CERTIFICATE_BASE64` | Developer ID Application certificate as Base64 | See below |
-| `APPLE_CERTIFICATE_PASSWORD` | Password set when exporting the `.p12` | Set when exporting |
-| `APPLE_TEAM_ID` | Apple Developer Team ID | `3FKXTCP8JU` — or check [developer.apple.com/account](https://developer.apple.com/account) → Membership |
-| `APPLE_ID` | Apple ID email for notarytool | Your Apple ID login email |
-| `APPLE_APP_PASSWORD` | App-specific password for notarytool | Same as Step 2 above (`xxxx-xxxx-xxxx-xxxx`) |
-| `SPARKLE_ED_PRIVATE_KEY` | EdDSA (ed25519) private key for signing updates | See [Sparkle EdDSA Keys](#sparkle-eddsa-keys-for-auto-update) below |
-| `SPARKLE_ED_PUBLIC_KEY` | EdDSA (ed25519) public key embedded in the app | Generated alongside the private key |
-
-### Exporting the certificate as Base64
-
-1. Open **Keychain Access**
-2. Find `Developer ID Application: <your name>` under My Certificates
-3. Right-click → Export → save as `DeveloperID.p12`, set a strong password
-4. Base64-encode it:
-
-```bash
-base64 -i DeveloperID.p12 | pbcopy   # copies to clipboard, paste into GitHub Secret
-```
-
-5. Delete the local `.p12` file after uploading — it is sensitive.
-
-### Sparkle EdDSA Keys (for Auto-Update)
-
-Sparkle uses EdDSA (ed25519) signatures to verify that downloaded updates are
-authentic. You need to generate a keypair **once** and store both parts as
-GitHub Secrets.
-
-**Generate the keypair:**
-
-Download Sparkle's CLI tools from the
-[latest release](https://github.com/sparkle-project/Sparkle/releases) and run:
-
-```bash
-# Extract Sparkle tools
-tar xJf Sparkle-2.7.5.tar.xz bin
-
-# Generate a new EdDSA keypair (saved to your login Keychain)
 ./bin/generate_keys
-```
-
-The tool will:
-1. Save the **private key** in your Mac's login Keychain.
-2. Print the **public key** (a base64 string) to stdout.
-
-**Export the private key** (for CI):
-
-```bash
 ./bin/generate_keys -x sparkle_private_key
-cat sparkle_private_key | pbcopy   # copies to clipboard
 ```
 
-**Store as GitHub Secrets:**
+`generate_keys` creates a signing key in the login Keychain, or reuses the
+existing key, and prints the public key. `-x` exports the private key for CI.
+For an existing release channel, retain its established key pair; creating a
+new key is not a routine release step. Store the exported private key in the CI
+secret and remove the temporary export after transfer, retaining a secure backup.
+
+[Resources/Info.plist](Resources/Info.plist) expands the `SPARKLE_ED_PUBLIC_KEY`
+build setting into `SUPublicEDKey`. CI supplies this setting explicitly when
+archiving. For local distribution with working updates, set the matching public
+key in `project.yml` and run `make gen`; the checked-in setting is empty.
+The local Makefile does not inject the CI secret.
+
+## CI credentials
+
+Configure these repository secrets under Settings → Secrets and variables →
+Actions:
 
 | Secret | Value |
-|---|---|
-| `SPARKLE_ED_PRIVATE_KEY` | Contents of the exported private key file |
-| `SPARKLE_ED_PUBLIC_KEY` | The base64 public key string printed by `generate_keys` |
+| --- | --- |
+| `APPLE_CERTIFICATE_BASE64` | Base64 of the Developer ID Application certificate and private key exported as `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | Password protecting that `.p12` |
+| `APPLE_TEAM_ID` | Signing team, matching the certificate and export options |
+| `APPLE_ID` | Apple ID used for notarization |
+| `APPLE_APP_PASSWORD` | That account's app-specific password |
+| `SPARKLE_ED_PRIVATE_KEY` | Contents exported by `generate_keys -x` |
+| `SPARKLE_ED_PUBLIC_KEY` | Matching public key printed by `generate_keys` |
 
-**Clean up:**
-
-```bash
-rm sparkle_private_key   # do NOT leave the private key on disk
-```
-
-> ⚠️ **Keep your private key safe.** If it is lost, you can still rotate keys
-> for Developer ID-signed apps (Sparkle supports key rotation when the app is
-> also code-signed with Apple's Developer ID). But it's much simpler to never
-> lose it.
-
-**How it works in CI:**
-
-- `SPARKLE_ED_PUBLIC_KEY` is injected into the app's `Info.plist` via the
-  `SPARKLE_ED_PUBLIC_KEY` Xcode build setting at archive time.
-- `SPARKLE_ED_PRIVATE_KEY` is read by Sparkle's `generate_appcast` tool
-  (via environment variable) to sign the DMG and produce `appcast.xml`.
-- The `appcast.xml` is deployed to GitHub Pages at
-  `https://amio.github.io/TapTick/appcast.xml`.
-
----
-
-## Auto-Update Architecture
-
-TapTick uses [Sparkle 2](https://sparkle-project.org/) for automatic updates.
-
-### How it works
-
-1. The app checks `https://amio.github.io/TapTick/appcast.xml` for new versions
-   (by default every 24 hours, configurable by the user).
-2. If a newer version is found, Sparkle shows its native update UI with release
-   notes, download progress, and a restart prompt. TapTick disables Sparkle's
-   automatic-download/install opt-in checkbox so update policy stays in the app settings.
-3. The DMG is downloaded from GitHub Releases, verified against the EdDSA
-   signature in the appcast, extracted, and the app is replaced + relaunched.
-
-### CI pipeline flow (on `v*` tag push)
-
-```
-archive → export → notarize → create DMG
-                                    ↓
-                          GitHub Release (DMG uploaded)
-                                    ↓
-                  generate_appcast (signs DMG, produces appcast.xml)
-                                    ↓
-                    Deploy to GitHub Pages (appcast.xml + landing page)
-```
-
-### Key files
-
-| File | Purpose |
-|---|---|
-| `Resources/Info.plist` | Contains `SUFeedURL` and `SUPublicEDKey` |
-| `Sources/TapTickKit/Services/UpdateService.swift` | Wraps Sparkle's `SPUUpdater` |
-| `public/appcast.xml` | Generated by CI, served via GitHub Pages |
-| `.github/workflows/build.yml` | CI pipeline with appcast generation step |
-
----
-
-## Re-enabling iCloud Sync
-
-When ready to ship iCloud sync in a notarized build:
-
-1. **Register App ID** at [developer.apple.com](https://developer.apple.com) →
-   Certificates, Identifiers & Profiles → Identifiers → `com.taptick.app`
-   → enable iCloud capability
-
-2. **Create iCloud container** `iCloud.com.taptick.app` under Identifiers → iCloud Containers
-
-3. **Associate container** with the App ID under the iCloud capability settings
-
-4. **Create a provisioning profile**: Profiles → `+` → Developer ID → select App ID
-   `com.taptick.app` → select your Developer ID certificate → download and
-   double-click to install
-
-5. **Uncomment the entitlements** in `Resources/TapTick.entitlements`:
-
-```xml
-<key>com.apple.developer.icloud-container-identifiers</key>
-<array>
-    <string>iCloud.com.taptick.app</string>
-</array>
-<key>com.apple.developer.ubiquity-container-identifiers</key>
-<array>
-    <string>iCloud.com.taptick.app</string>
-</array>
-```
-
-6. **Update `Makefile` archive target** to reference the profile by name or UUID:
-
-```makefile
-PROVISIONING_PROFILE_SPECIFIER="TapTick Developer ID"
-```
-
-7. **Update `Resources/exportOptions.plist`** to add the profile mapping:
-
-```xml
-<key>provisioningProfiles</key>
-<dict>
-    <key>com.taptick.app</key>
-    <string>TapTick Developer ID</string>
-</dict>
-```
-
-8. **Update CI**: store the `.mobileprovision` file as an additional secret
-   (`APPLE_PROVISIONING_PROFILE_BASE64`) and add a step to install it before
-   the archive step (decode with `base64 --decode`, copy to
-   `~/Library/MobileDevice/Provisioning Profiles/`).
-
----
-
-## Verification
-
-After `make dist` or `make export`, confirm the signing is correct:
+Export the certificate with its private key from Keychain Access as
+`DeveloperID.p12`, then copy the encoded value for the secret:
 
 ```bash
-# Verify Developer ID chain
+base64 -i DeveloperID.p12 | pbcopy
+```
+
+Remove the temporary `.p12` after transfer. CI imports it into a temporary
+Keychain and removes that Keychain after distribution.
+
+## Update feed and landing page ownership
+
+[UpdateService](Sources/TapTickKit/Services/UpdateService.swift) wraps Sparkle.
+The app's feed URL is [appcast.xml](https://amio.github.io/TapTick/appcast.xml);
+update archives are hosted on GitHub Releases.
+
+On a version tag, `build.yml` publishes the DMG to GitHub Releases, fetches the
+existing feed, and invokes the pinned `generate_appcast` tool. It passes the
+private key through stdin using `--ed-key-file -`, and sets the download URL
+prefix to that tag's GitHub Release. The tool does not implicitly read TapTick's
+`SPARKLE_ED_PRIVATE_KEY` environment variable.
+
+The generated feed travels as the `sparkle-appcast` Actions artifact to the
+`publish-appcast` job, which updates `gh-pages` while preserving other files.
+The release then calls [pages.yml](.github/workflows/pages.yml) to refresh the
+landing page's download link and version from the latest GitHub Release.
+
+`pages.yml` also runs for changes to `public/**` or itself on `main`. It preserves
+the feed from `gh-pages` before deploying the landing page. Both publication
+jobs share the `github-pages` concurrency group. `public/appcast.xml` is a
+deployment staging file, not a source file to edit in the repository.
+
+## iCloud distribution status
+
+Sync code and migration support exist, but iCloud entitlements remain disabled
+in [Resources/TapTick.entitlements](Resources/TapTick.entitlements). Current
+distribution does not enable iCloud sync.
+
+Enabling it requires a separate provisioning and rollout decision: register the
+App ID and container, obtain a compatible Developer ID provisioning profile,
+then coordinate entitlements, local archive settings, export profile mapping,
+and CI profile installation. Validate migration and multi-device behavior in
+the provisioned build before advertising sync as available.
+
+## Verify a distributable build
+
+After `make dist` (or `make export` followed by `make notarize`), verify the
+exported app:
+
+```bash
+codesign --verify --deep --strict build/export/TapTick.app
 codesign -dv --verbose=4 build/export/TapTick.app
-
-# Verify notarization staple
 xcrun stapler validate build/export/TapTick.app
-
-# Check Gatekeeper would pass
 spctl --assess --type exec --verbose build/export/TapTick.app
 ```
 
-Expected output for `codesign`:
-
-```
-Authority=Developer ID Application: Xiaowei Jin (3FKXTCP8JU)
-Authority=Developer ID Certification Authority
-Authority=Apple Root CA
-```
-
-Expected output for `spctl`:
-
-```
-build/export/TapTick.app: accepted
-source=Notarized Developer ID
-```
+Expect the intended Developer ID Application authority, a valid stapled ticket,
+and Gatekeeper acceptance as `Notarized Developer ID`. Export alone does not
+notarize or staple the app. Check the exported `Contents/Info.plist` for the
+release identifier `com.taptick.app`, the intended marketing/build versions,
+and the established `SUPublicEDKey` before distributing updates.
