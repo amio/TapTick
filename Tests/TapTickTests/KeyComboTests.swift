@@ -54,21 +54,6 @@ struct KeyComboTests {
 @Suite("KeyCombo.Modifiers")
 struct ModifiersTests {
 
-    @Test("Active modifiers returns correct list")
-    func activeModifiers() {
-        let mods: KeyCombo.Modifiers = [.control, .command]
-        let active = mods.activeModifiers
-        #expect(active.count == 2)
-        #expect(active.contains(.control))
-        #expect(active.contains(.command))
-    }
-
-    @Test("Empty modifiers returns empty list")
-    func emptyModifiers() {
-        let mods: KeyCombo.Modifiers = []
-        #expect(mods.activeModifiers.isEmpty)
-    }
-
     @Test("carbonModifiers round-trip via Carbon flags")
     func carbonModifiersRoundTrip() {
         let mods: KeyCombo.Modifiers = [.command, .shift, .option]

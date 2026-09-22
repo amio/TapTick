@@ -19,17 +19,6 @@ struct KeyCombo: Codable, Hashable, Sendable {
         static let shift = Modifiers(rawValue: 1 << 3)
         static let function_ = Modifiers(rawValue: 1 << 4)
 
-        /// All modifier flags currently set, as an array.
-        var activeModifiers: [Modifiers] {
-            var result: [Modifiers] = []
-            if contains(.control) { result.append(.control) }
-            if contains(.option) { result.append(.option) }
-            if contains(.shift) { result.append(.shift) }
-            if contains(.command) { result.append(.command) }
-            if contains(.function_) { result.append(.function_) }
-            return result
-        }
-
         /// Modifier-only display string, e.g. "⌃⌥⌘". Used for live recording preview
         /// where no key has been pressed yet — avoids appending a raw modifier keyCode.
         var displayString: String {
@@ -195,7 +184,7 @@ extension KeyCombo.Modifiers {
 // MARK: - NSEvent Flag Conversion
 
 extension KeyCombo.Modifiers {
-    /// Convert from NSEvent modifier flags (used by KeyRecorderView during shortcut recording).
+    /// Convert from NSEvent modifier flags for shortcut recording and event display.
     init(nsEventFlags flags: NSEvent.ModifierFlags) {
         var mods: KeyCombo.Modifiers = []
         if flags.contains(.command) { mods.insert(.command) }

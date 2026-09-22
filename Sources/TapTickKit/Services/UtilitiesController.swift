@@ -140,11 +140,6 @@ public final class UtilitiesController {
         onReservedHotkeysChanged?()
     }
 
-    func restoreDefaultScreenshotHotkeys() {
-        updateScreenshotCaptureToClipboardHotkey(ScreenshotToolsConfiguration.defaultCaptureToClipboardHotkey)
-        updateScreenshotCaptureAndMarkHotkey(ScreenshotToolsConfiguration.defaultCaptureAndMarkHotkey)
-    }
-
     // MARK: - Large Type
 
     func setLargeTypeEnabled(_ isEnabled: Bool) {

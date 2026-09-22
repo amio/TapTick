@@ -218,13 +218,6 @@ public final class ShortcutStore {
         syncToCloud()
     }
 
-    func remove(atOffsets offsets: IndexSet) {
-        let ids = offsets.compactMap { shortcuts.indices.contains($0) ? shortcuts[$0].id : nil }
-        for id in ids {
-            remove(id: id)
-        }
-    }
-
     func toggleEnabled(id: UUID) {
         guard let index = shortcuts.firstIndex(where: { $0.id == id }) else { return }
         shortcuts[index].isEnabled.toggle()
@@ -238,10 +231,6 @@ public final class ShortcutStore {
         shortcuts[index].lastTriggeredAt = Date()
         // Trigger metadata remains local-only and must not win a content merge.
         saveToDisk()
-    }
-
-    func shortcut(for keyCombo: KeyCombo) -> Shortcut? {
-        shortcuts.first { $0.keyCombo == keyCombo && $0.isEnabled }
     }
 
     func hasConflict(keyCombo: KeyCombo, excludingID: UUID? = nil) -> Bool {

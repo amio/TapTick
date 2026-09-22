@@ -533,12 +533,6 @@ struct ScriptEditorDraftState {
         return updated
     }
 
-    mutating func markSaved() {
-        if let updated = shortcutWithCurrentDraft() {
-            loadedShortcut = updated
-        }
-        savedDraft = draft
-    }
 }
 
 private struct ScriptDetailHeader: View {
