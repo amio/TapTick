@@ -207,7 +207,6 @@ struct ScriptsDirectoryView: View {
     private func addNewScript() {
         do {
             let shortcutID = try store.createScript()
-            hotkeyService.restart(store: store)
             nameSelectionRequestID = shortcutID
             selection = shortcutID
         } catch {
@@ -231,14 +230,12 @@ struct ScriptsDirectoryView: View {
         var updated = shortcut
         updated.keyCombo = combo
         store.update(updated)
-        hotkeyService.restart(store: store)
     }
 
     private func clearHotkey(for shortcut: Shortcut) {
         var updated = shortcut
         updated.keyCombo = nil
         store.update(updated)
-        hotkeyService.restart(store: store)
     }
 }
 
@@ -373,7 +370,6 @@ struct ScriptDetailView: View {
             selection = selectionAfterRemoving(id)
         }
         store.remove(id: id)
-        hotkeyService.restart(store: store)
         editorRunIDs[id] = nil
     }
 

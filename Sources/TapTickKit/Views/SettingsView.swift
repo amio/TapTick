@@ -6,6 +6,7 @@ public struct SettingsView: View {
 
     @Environment(CloudSyncService.self) private var cloudSync
     @Environment(UpdateService.self) private var updateService
+    @Environment(ShortcutStore.self) private var store
 
     enum SettingsSection: String, Hashable, CaseIterable, Identifiable {
         case general = "General"
@@ -53,6 +54,20 @@ public struct SettingsView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let issue = store.loadIssue {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text(issue).font(.callout).frame(maxWidth: .infinity, alignment: .leading)
+                    if store.canRetryLoading {
+                        Button("Retry") { store.reloadFromDisk() }
+                    }
+                }
+                .padding()
+                .background(.bar)
+            }
+        }
         .onChange(of: selectedSection) { _, section in
             restoreSidebarFocus(afterSelecting: section)
         }
