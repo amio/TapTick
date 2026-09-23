@@ -28,18 +28,6 @@ public final class LoginItemManager {
         refreshStatus()
     }
 
-    /// Enable launch at login.
-    func enable() {
-        guard !isEnabled else { return }
-        toggle()
-    }
-
-    /// Disable launch at login.
-    func disable() {
-        guard isEnabled else { return }
-        toggle()
-    }
-
     /// Refresh the current status from the system.
     func refreshStatus() {
         isEnabled = service.status == .enabled

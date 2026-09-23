@@ -34,17 +34,31 @@ public final class ShortcutStore {
     private(set) var shortcuts: [Shortcut] = []
     @ObservationIgnored private(set) var deletions: [ShortcutDeletion] = []
     private(set) var scriptDirectoryIssue: String?
+    private enum WriteBlock {
+        case unreadable(String)
+        case incompleteRollback(String)
+
+        var message: String {
+            switch self {
+            case .unreadable(let message), .incompleteRollback(let message): return message
+            }
+        }
+    }
+    private var writeBlock: WriteBlock?
+    var loadIssue: String? { writeBlock?.message }
+    var canRetryLoading: Bool {
+        if case .incompleteRollback = writeBlock { return false }
+        return true
+    }
 
     // MARK: - Persistence
 
     let scriptsDirectoryURL: URL
 
-    @ObservationIgnored public var onExternalScriptsChanged: (() -> Void)?
     @ObservationIgnored private let fileURL: URL
     @ObservationIgnored private let cloudSync: CloudSyncService?
     @ObservationIgnored private var directoryMonitor: ScriptDirectoryMonitor?
     @ObservationIgnored private var reconcileTask: Task<Void, Never>?
-    @ObservationIgnored private var loadedSchemaVersion = ShortcutSyncState.currentSchemaVersion
 
     public init(directory: URL? = nil, cloudSync: CloudSyncService? = nil) {
         let directory =
@@ -60,22 +74,40 @@ public final class ShortcutStore {
         self.scriptsDirectoryURL = directory.appendingPathComponent("Scripts", isDirectory: true)
         self.cloudSync = cloudSync
 
-        do {
-            try ensureScriptsDirectory()
-        } catch {
-            scriptDirectoryIssue = error.localizedDescription
-        }
+        reloadFromDisk()
+    }
 
-        loadFromDisk()
-        var isManagedDirectoryReady = true
-        if loadedSchemaVersion < ShortcutSyncState.currentSchemaVersion {
-            isManagedDirectoryReady = migrateLegacyScripts()
-        }
-        if isManagedDirectoryReady {
+    /// An unreadable library is never a new empty library. All mutation entry points share this gate.
+    private var canWrite: Bool { loadIssue == nil }
+
+    private func requireWritable() throws {
+        if let loadIssue { throw ScriptStoreError.fileOperation(loadIssue) }
+    }
+
+    func reloadFromDisk() {
+        guard canRetryLoading else { return }
+        reconcileTask?.cancel()
+        reconcileTask = nil
+        directoryMonitor = nil
+        cloudSync?.onRemoteChange = nil
+        do {
+            let state = try loadFromDisk()
+            try ensureScriptsDirectory()
+            writeBlock = nil
+            scriptDirectoryIssue = nil
+            if state.schemaVersion < ShortcutSyncState.currentSchemaVersion {
+                let migrated = try prepareLegacyMigration(state)
+                try commitScriptFiles(migrated, replacing: [])
+                apply(migrated)
+            } else {
+                apply(state)
+            }
             reconcileScriptDirectory()
-            saveToDisk()
+            try writeState(syncState)
             startDirectoryMonitor()
             setupCloudSync()
+        } catch {
+            if canRetryLoading { writeBlock = .unreadable(error.localizedDescription) }
         }
     }
 
@@ -93,6 +125,7 @@ public final class ShortcutStore {
     // MARK: - CRUD Operations
 
     func add(_ shortcut: Shortcut) {
+        guard canWrite else { return }
         var shortcut = shortcut
         shortcut.modifiedAt = Date()
 
@@ -115,6 +148,7 @@ public final class ShortcutStore {
 
     @discardableResult
     func createScript() throws -> UUID {
+        try requireWritable()
         let name = try uniqueName(preferred: "Untitled Script")
         let shortcut = Shortcut(name: name, action: .runScript(script: ""))
         try writeScript("", to: scriptURL(named: name))
@@ -126,6 +160,7 @@ public final class ShortcutStore {
     }
 
     func update(_ shortcut: Shortcut) {
+        guard canWrite else { return }
         guard let index = shortcuts.firstIndex(where: { $0.id == shortcut.id }) else { return }
         let current = shortcuts[index]
 
@@ -151,6 +186,7 @@ public final class ShortcutStore {
     /// Persist editor-owned fields without overwriting a hotkey changed since the draft loaded.
     @discardableResult
     func updateScript(_ shortcut: Shortcut) throws -> Shortcut {
+        try requireWritable()
         guard let index = shortcuts.firstIndex(where: { $0.id == shortcut.id }) else {
             throw ScriptStoreError.fileOperation("The script no longer exists.")
         }
@@ -199,6 +235,7 @@ public final class ShortcutStore {
     }
 
     func remove(id: UUID) {
+        guard canWrite else { return }
         guard let shortcut = shortcuts.first(where: { $0.id == id }) else { return }
         if case .runScript = shortcut.action {
             let url = scriptURL(named: shortcut.name)
@@ -218,14 +255,8 @@ public final class ShortcutStore {
         syncToCloud()
     }
 
-    func remove(atOffsets offsets: IndexSet) {
-        let ids = offsets.compactMap { shortcuts.indices.contains($0) ? shortcuts[$0].id : nil }
-        for id in ids {
-            remove(id: id)
-        }
-    }
-
     func toggleEnabled(id: UUID) {
+        guard canWrite else { return }
         guard let index = shortcuts.firstIndex(where: { $0.id == id }) else { return }
         shortcuts[index].isEnabled.toggle()
         shortcuts[index].modifiedAt = Date()
@@ -234,14 +265,11 @@ public final class ShortcutStore {
     }
 
     func markTriggered(id: UUID) {
+        guard canWrite else { return }
         guard let index = shortcuts.firstIndex(where: { $0.id == id }) else { return }
         shortcuts[index].lastTriggeredAt = Date()
         // Trigger metadata remains local-only and must not win a content merge.
         saveToDisk()
-    }
-
-    func shortcut(for keyCombo: KeyCombo) -> Shortcut? {
-        shortcuts.first { $0.keyCombo == keyCombo && $0.isEnabled }
     }
 
     func hasConflict(keyCombo: KeyCombo, excludingID: UUID? = nil) -> Bool {
@@ -260,6 +288,7 @@ public final class ShortcutStore {
     }
 
     func prepareScriptsDirectory() throws -> URL {
+        try requireWritable()
         try ensureScriptsDirectory()
         return scriptsDirectoryURL
     }
@@ -268,6 +297,7 @@ public final class ShortcutStore {
 
     /// Adopts the complete current directory state. Exposed internally for deterministic tests.
     func reconcileScriptDirectory() {
+        guard canWrite else { return }
         do {
             try ensureScriptsDirectory()
             let urls = try visibleRegularFiles()
@@ -340,7 +370,6 @@ public final class ShortcutStore {
             guard changed else { return }
             saveToDisk()
             syncToCloud()
-            onExternalScriptsChanged?()
         } catch {
             scriptDirectoryIssue = error.localizedDescription
         }
@@ -364,66 +393,74 @@ public final class ShortcutStore {
     // MARK: - Cloud Sync
 
     private func syncToCloud() {
+        guard canWrite else { return }
         cloudSync?.upload(syncState)
     }
 
     private func applyRemoteChanges(_ remoteState: ShortcutSyncState) {
-        reconcileScriptDirectory()
-        let merged = CloudSyncService.merge(local: syncState, remote: remoteState)
-
-        if merged != syncState {
-            adoptIncomingState(merged)
-            saveToDisk()
-        }
-
-        if syncState != remoteState {
-            cloudSync?.upload(syncState)
+        guard canWrite else { return }
+        do {
+            try remoteState.validate()
+            reconcileScriptDirectory()
+            let merged = CloudSyncService.merge(local: syncState, remote: remoteState)
+            if merged != syncState {
+                adoptIncomingState(merged)
+                saveToDisk()
+            }
+            if syncState != remoteState { syncToCloud() }
+        } catch {
+            scriptDirectoryIssue = error.localizedDescription
         }
     }
 
     func performFullSync() {
-        guard let cloudSync, cloudSync.isEnabled else { return }
-        reconcileScriptDirectory()
-
-        if let remote = cloudSync.download() {
-            adoptIncomingState(CloudSyncService.merge(local: syncState, remote: remote))
-            saveToDisk()
+        guard canWrite, let cloudSync, cloudSync.isEnabled else { return }
+        do {
+            let remote = try cloudSync.download()
+            try remote?.validate()
+            reconcileScriptDirectory()
+            if let remote {
+                adoptIncomingState(CloudSyncService.merge(local: syncState, remote: remote))
+                saveToDisk()
+            }
+            cloudSync.upload(syncState)
+        } catch {
+            scriptDirectoryIssue = error.localizedDescription
         }
-
-        cloudSync.upload(syncState)
     }
 
     // MARK: - Disk I/O
 
-    private func loadFromDisk() {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            apply(.empty)
-            return
-        }
+    private func loadFromDisk() throws -> ShortcutSyncState {
         do {
             let data = try Data(contentsOf: fileURL)
-            apply(try ShortcutSyncState.decode(from: data, using: JSONDecoder()))
-        } catch {
-            print("TapTick: Failed to load shortcuts: \(error)")
-            apply(.empty)
+            return try ShortcutSyncState.decode(from: data, using: JSONDecoder())
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return .empty
         }
     }
 
+    private func writeState(_ state: ShortcutSyncState) throws {
+        try requireWritable()
+        try state.validate()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(state).write(to: fileURL, options: .atomic)
+    }
+
     private func saveToDisk() {
+        guard canWrite else { return }
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(syncState)
-            try data.write(to: fileURL, options: .atomic)
-            loadedSchemaVersion = ShortcutSyncState.currentSchemaVersion
+            try writeState(syncState)
         } catch {
-            print("TapTick: Failed to save shortcuts: \(error)")
+            scriptDirectoryIssue = error.localizedDescription
         }
     }
 
     // MARK: - Import/Export
 
     func exportData() throws -> Data {
+        try requireWritable()
         reconcileScriptDirectory()
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -431,25 +468,105 @@ public final class ShortcutStore {
     }
 
     func importData(_ data: Data) throws {
-        reconcileScriptDirectory()
-        let importDate = Date()
-        let imported = try JSONDecoder().decode([Shortcut].self, from: data).map { shortcut in
-            var restored = shortcut
-            restored.modifiedAt = importDate
-            return restored
+        try requireWritable()
+        var imported = try JSONDecoder().decode([Shortcut].self, from: data)
+        try ShortcutSyncState(shortcuts: imported, deletions: []).validate()
+
+        // Cloud dates have whole-second precision. Restoration must survive its round trip,
+        // including when a known edit or deletion is ahead of this machine's clock.
+        let latestEvent = (shortcuts + imported).map(\.modifiedAt) + deletions.map(\.deletedAt)
+        let nextKnownSecond = floor((latestEvent.max() ?? .distantPast).timeIntervalSince1970) + 1
+        let importDate = max(Date(), Date(timeIntervalSince1970: nextKnownSecond))
+        for index in imported.indices {
+            if case .runScriptFile(let path, let shell) = imported[index].action {
+                imported[index].action = .runScript(script: try legacySource(at: path, shell: shell))
+            }
+            imported[index].modifiedAt = importDate
         }
 
-        for shortcut in shortcuts where shortcut.action.scriptSource != nil {
-            try? FileManager.default.removeItem(at: scriptURL(named: shortcut.name))
+        let managedNames = Set(shortcuts.filter { $0.action.scriptSource != nil }.map { nameKey($0.name) })
+        let originals = try visibleRegularFiles().filter { managedNames.contains(nameKey($0.lastPathComponent)) }
+        let replacedNames = Set(originals.map { nameKey($0.lastPathComponent) })
+        let entries = try FileManager.default.contentsOfDirectory(atPath: scriptsDirectoryURL.path)
+        var occupied = Set(entries.map(nameKey)).subtracting(replacedNames)
+        for index in imported.indices where imported[index].action.scriptSource != nil {
+            let name = try availableName(preferred: imported[index].name, occupiedKeys: occupied)
+            imported[index].name = name
+            occupied.insert(nameKey(name))
         }
-        shortcuts = []
-        deletions = []
 
-        for shortcut in imported {
-            addWithoutSaving(shortcut)
-        }
-        saveToDisk()
+        let importedIDs = Set(imported.map(\.id))
+        let removedIDs = Set(shortcuts.map(\.id)).subtracting(importedIDs)
+        let retainedDeletions = deletions.filter { !importedIDs.contains($0.id) && !removedIDs.contains($0.id) }
+        let state = ShortcutSyncState(
+            shortcuts: imported,
+            deletions: retainedDeletions + removedIDs.map { ShortcutDeletion(id: $0, deletedAt: importDate) }
+        )
+        try commitScriptFiles(state, replacing: originals)
+        apply(state)
         syncToCloud()
+    }
+
+    /// Metadata is the commit point. Until it succeeds, the published library stays unchanged.
+    /// This supports I/O rollback, not crash-atomic replacement across multiple files.
+    private func commitScriptFiles(_ state: ShortcutSyncState, replacing originals: [URL]) throws {
+        let files = FileManager.default
+        let staging = fileURL.deletingLastPathComponent().appendingPathComponent(
+            ".shortcut-import-\(UUID().uuidString)")
+        let prepared = staging.appendingPathComponent("prepared", isDirectory: true)
+        let backup = staging.appendingPathComponent("originals", isDirectory: true)
+        var preserveBackup = false
+        defer {
+            if !preserveBackup { try? files.removeItem(at: staging) }
+        }
+        try files.createDirectory(at: prepared, withIntermediateDirectories: true)
+        try files.createDirectory(at: backup, withIntermediateDirectories: true)
+        if files.fileExists(atPath: fileURL.path) {
+            try files.copyItem(at: fileURL, to: staging.appendingPathComponent("shortcuts.json"))
+        }
+        let scripts = state.shortcuts.filter { $0.action.scriptSource != nil }
+        for script in scripts {
+            try writeScript(script.action.scriptSource!, to: prepared.appendingPathComponent(script.name))
+        }
+
+        var movedOriginals: [URL] = []
+        var installed: [URL] = []
+        do {
+            for original in originals {
+                try files.moveItem(at: original, to: backup.appendingPathComponent(original.lastPathComponent))
+                movedOriginals.append(original)
+            }
+            for script in scripts {
+                let destination = scriptURL(named: script.name)
+                try files.moveItem(at: prepared.appendingPathComponent(script.name), to: destination)
+                installed.append(destination)
+            }
+            try writeState(state)
+        } catch {
+            let commitError = error
+            var rollbackFailed = false
+            for url in installed.reversed() {
+                do { try files.removeItem(at: url) } catch { rollbackFailed = true }
+            }
+            for original in movedOriginals.reversed() {
+                do {
+                    try files.moveItem(at: backup.appendingPathComponent(original.lastPathComponent), to: original)
+                } catch { rollbackFailed = true }
+            }
+            if rollbackFailed {
+                preserveBackup = true
+                let message =
+                    "Import failed and some original files could not be restored. Recover them from \(staging.path) before reopening TapTick. \(commitError.localizedDescription)"
+                writeBlock = .incompleteRollback(message)
+                throw ScriptStoreError.fileOperation(message)
+            }
+            throw commitError
+        }
+        scriptDirectoryIssue = nil
+        do { try files.removeItem(at: staging) } catch {
+            preserveBackup = true
+            scriptDirectoryIssue = "Import succeeded, but its temporary backup could not be removed: \(staging.path)"
+        }
     }
 
     // MARK: - Managed File Helpers
@@ -459,57 +576,30 @@ public final class ShortcutStore {
     }
 
     private func apply(_ state: ShortcutSyncState) {
-        loadedSchemaVersion = state.schemaVersion
         shortcuts = state.shortcuts
         deletions = state.deletions
     }
 
-    private func migrateLegacyScripts() -> Bool {
-        var occupiedKeys = Set((try? visibleRegularFiles().map { nameKey($0.lastPathComponent) }) ?? [])
-        var completed = true
-
-        for index in shortcuts.indices {
+    private func prepareLegacyMigration(_ state: ShortcutSyncState) throws -> ShortcutSyncState {
+        var migrated = state
+        var occupied = Set(try FileManager.default.contentsOfDirectory(atPath: scriptsDirectoryURL.path).map(nameKey))
+        for index in migrated.shortcuts.indices {
             let source: String
-            switch shortcuts[index].action {
-            case .runScript(let inlineSource):
-                source = inlineSource
+            switch migrated.shortcuts[index].action {
+            case .runScript(let inlineSource): source = inlineSource
             case .runScriptFile(let path, let shell):
-                let expandedPath = NSString(string: path).expandingTildeInPath
-                guard let fileSource = try? String(contentsOfFile: expandedPath, encoding: .utf8) else {
-                    continue
-                }
-                if case .missing = ScriptShebang.inspect(fileSource) {
-                    source = ScriptShebang.replacingShebang(
-                        in: fileSource,
-                        with: "#!\(shell.rawValue)"
-                    )
-                } else {
-                    source = fileSource
-                }
-            case .launchApp:
-                continue
+                // Unavailable external files retain their legacy record for compatibility.
+                guard let legacySource = try? legacySource(at: path, shell: shell) else { continue }
+                source = legacySource
+            case .launchApp: continue
             }
-
-            do {
-                let name = try uniqueName(
-                    preferred: shortcuts[index].name,
-                    includeStoredNames: false,
-                    additionalOccupiedKeys: occupiedKeys
-                )
-                try writeScript(source, to: scriptURL(named: name))
-                occupiedKeys.insert(nameKey(name))
-                shortcuts[index].name = name
-                shortcuts[index].action = .runScript(script: source)
-            } catch {
-                scriptDirectoryIssue = error.localizedDescription
-                completed = false
-            }
+            let name = try availableName(preferred: migrated.shortcuts[index].name, occupiedKeys: occupied)
+            occupied.insert(nameKey(name))
+            migrated.shortcuts[index].name = name
+            migrated.shortcuts[index].action = .runScript(script: source)
         }
-
-        if completed {
-            loadedSchemaVersion = ShortcutSyncState.currentSchemaVersion
-        }
-        return completed
+        migrated.schemaVersion = ShortcutSyncState.currentSchemaVersion
+        return migrated
     }
 
     private func adoptIncomingState(_ state: ShortcutSyncState) {
@@ -560,42 +650,17 @@ public final class ShortcutStore {
 
         shortcuts = adopted
         deletions = state.deletions
-        loadedSchemaVersion = ShortcutSyncState.currentSchemaVersion
     }
 
-    private func addWithoutSaving(_ shortcut: Shortcut) {
-        var shortcut = shortcut
-        do {
-            switch shortcut.action {
-            case .runScript(let source):
-                let name = try uniqueName(preferred: shortcut.name)
-                shortcut.name = name
-                try writeScript(source, to: scriptURL(named: name))
-            case .runScriptFile(let path, let shell):
-                let expandedPath = NSString(string: path).expandingTildeInPath
-                guard let fileSource = try? String(contentsOfFile: expandedPath, encoding: .utf8) else {
-                    throw ScriptStoreError.unavailableLegacyFile(path)
-                }
-                let source: String
-                if case .missing = ScriptShebang.inspect(fileSource) {
-                    source = ScriptShebang.replacingShebang(
-                        in: fileSource,
-                        with: "#!\(shell.rawValue)"
-                    )
-                } else {
-                    source = fileSource
-                }
-                let name = try uniqueName(preferred: shortcut.name)
-                shortcut.name = name
-                shortcut.action = .runScript(script: source)
-                try writeScript(source, to: scriptURL(named: name))
-            case .launchApp:
-                break
-            }
-            shortcuts.append(shortcut)
-        } catch {
-            scriptDirectoryIssue = error.localizedDescription
+    private func legacySource(at path: String, shell: ShortcutAction.LegacyShell) throws -> String {
+        let expandedPath = NSString(string: path).expandingTildeInPath
+        guard let source = try? String(contentsOfFile: expandedPath, encoding: .utf8) else {
+            throw ScriptStoreError.unavailableLegacyFile(path)
         }
+        if case .missing = ScriptShebang.inspect(source) {
+            return ScriptShebang.replacingShebang(in: source, with: "#!\(shell.rawValue)")
+        }
+        return source
     }
 
     private func ensureScriptsDirectory() throws {
@@ -644,7 +709,6 @@ public final class ShortcutStore {
         includeStoredNames: Bool = true,
         additionalOccupiedKeys: Set<String> = []
     ) throws -> String {
-        let base = (try? validatedName(preferred)) ?? "Untitled Script"
         let excludedKey = excludingFileName.map(nameKey)
         var occupiedKeys = additionalOccupiedKeys
         if includeStoredNames {
@@ -664,9 +728,14 @@ public final class ShortcutStore {
                 })
         }
 
+        return try availableName(preferred: preferred, occupiedKeys: occupiedKeys)
+    }
+
+    private func availableName(preferred: String, occupiedKeys: Set<String>) throws -> String {
+        let base = (try? validatedName(preferred)) ?? "Untitled Script"
         if !occupiedKeys.contains(nameKey(base)) { return base }
         for suffix in 2...10_000 {
-            let candidate = suffixedName(base, suffix: suffix)
+            let candidate = try validatedName(suffixedName(base, suffix: suffix))
             if !occupiedKeys.contains(nameKey(candidate)) { return candidate }
         }
         throw ScriptStoreError.fileOperation("Could not choose an available script name.")

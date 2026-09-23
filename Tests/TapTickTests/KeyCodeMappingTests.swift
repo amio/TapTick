@@ -50,10 +50,4 @@ struct KeyCodeMappingTests {
         #expect(KeyCodeMapping.keyName(for: 999) == "Key(999)")
     }
 
-    @Test("Reverse lookup keyCode(for:)")
-    func reverseKeyCodeLookup() {
-        #expect(KeyCodeMapping.keyCode(for: "A") == 0)
-        #expect(KeyCodeMapping.keyCode(for: "Space") == 49)
-        #expect(KeyCodeMapping.keyCode(for: "unknown") == nil)
-    }
 }

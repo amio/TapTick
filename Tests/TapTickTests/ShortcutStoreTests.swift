@@ -103,17 +103,6 @@ struct ShortcutStoreTests {
         #expect(store.deletions.isEmpty)
     }
 
-    @Test("Remove at offsets")
-    func removeAtOffsets() {
-        let store = makeStore()
-        store.add(makeSampleShortcut(name: "A"))
-        store.add(makeSampleShortcut(name: "B"))
-        store.add(makeSampleShortcut(name: "C"))
-        store.remove(atOffsets: IndexSet(integer: 1))
-        #expect(store.shortcuts.count == 2)
-        #expect(store.shortcuts.map(\.name) == ["A", "C"])
-    }
-
     @Test("Toggle enabled")
     func toggleEnabled() {
         let store = makeStore()
@@ -134,25 +123,6 @@ struct ShortcutStoreTests {
         #expect(store.shortcuts.first?.lastTriggeredAt == nil)
         store.markTriggered(id: shortcut.id)
         #expect(store.shortcuts.first?.lastTriggeredAt != nil)
-    }
-
-    @Test("Find shortcut by key combo")
-    func findByKeyCombo() {
-        let store = makeStore()
-        let combo = KeyCombo(keyCode: 0, modifiers: .command)
-        let shortcut = Shortcut(
-            name: "Find Me",
-            keyCombo: combo,
-            action: .launchApp(bundleIdentifier: "com.test", appName: "Test")
-        )
-        store.add(shortcut)
-
-        let found = store.shortcut(for: combo)
-        #expect(found?.name == "Find Me")
-
-        // Disabled shortcuts should not be found
-        store.toggleEnabled(id: shortcut.id)
-        #expect(store.shortcut(for: combo) == nil)
     }
 
     @Test("Conflict detection")

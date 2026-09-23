@@ -248,7 +248,6 @@ struct GeneralSettingsView: View {
             }
 
             try store.importData(Data(contentsOf: url))
-            hotkeyService.restart(store: store)
         } catch {
             presentFileOperationError(error)
         }

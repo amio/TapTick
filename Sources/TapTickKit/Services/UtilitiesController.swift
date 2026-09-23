@@ -57,8 +57,6 @@ public final class UtilitiesController {
     private(set) var keystrokeOverlayPermission: EventListeningPermissionStatus
     private(set) var isKeystrokeOverlayCapturing: Bool
 
-    public var onReservedHotkeysChanged: (() -> Void)?
-
     var keystrokeOverlay: KeystrokeOverlayConfiguration {
         get { configuration.keystrokeOverlay }
         set { configuration.keystrokeOverlay = newValue }
@@ -114,7 +112,6 @@ public final class UtilitiesController {
     func updateKeystrokeOverlayHotkey(_ combo: KeyCombo) {
         guard keystrokeOverlay.hotkey != combo else { return }
         keystrokeOverlay.hotkey = combo
-        onReservedHotkeysChanged?()
     }
 
     func restoreDefaultKeystrokeOverlayHotkey() {
@@ -125,24 +122,16 @@ public final class UtilitiesController {
 
     func setScreenshotToolsEnabled(_ isEnabled: Bool) {
         screenshotTools.isEnabled = isEnabled
-        onReservedHotkeysChanged?()
     }
 
     func updateScreenshotCaptureToClipboardHotkey(_ combo: KeyCombo) {
         guard screenshotTools.captureToClipboardHotkey != combo else { return }
         screenshotTools.captureToClipboardHotkey = combo
-        onReservedHotkeysChanged?()
     }
 
     func updateScreenshotCaptureAndMarkHotkey(_ combo: KeyCombo) {
         guard screenshotTools.captureAndMarkHotkey != combo else { return }
         screenshotTools.captureAndMarkHotkey = combo
-        onReservedHotkeysChanged?()
-    }
-
-    func restoreDefaultScreenshotHotkeys() {
-        updateScreenshotCaptureToClipboardHotkey(ScreenshotToolsConfiguration.defaultCaptureToClipboardHotkey)
-        updateScreenshotCaptureAndMarkHotkey(ScreenshotToolsConfiguration.defaultCaptureAndMarkHotkey)
     }
 
     // MARK: - Large Type
@@ -150,13 +139,11 @@ public final class UtilitiesController {
     func setLargeTypeEnabled(_ isEnabled: Bool) {
         guard largeType.isEnabled != isEnabled else { return }
         largeType.isEnabled = isEnabled
-        onReservedHotkeysChanged?()
     }
 
     func updateLargeTypeHotkey(_ combo: KeyCombo) {
         guard largeType.hotkey != combo else { return }
         largeType.hotkey = combo
-        onReservedHotkeysChanged?()
     }
 
     func restoreDefaultLargeTypeHotkey() {

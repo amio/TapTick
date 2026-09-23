@@ -27,7 +27,7 @@ struct ScriptTextEditorTests {
     }
 
     @Test("Loading a script establishes a clean saved baseline")
-    func loadingDraftIsSaved() {
+    func loadingDraftIsSaved() throws {
         let shortcut = Shortcut(
             name: "Example",
             action: .runScript(script: "#!/bin/zsh\necho initial")
@@ -45,7 +45,9 @@ struct ScriptTextEditorTests {
         #expect(!state.hasUnsavedChanges)
 
         state.draft.name = "Renamed"
-        state.markSaved()
+        let persisted = try #require(state.shortcutWithCurrentDraft())
+        state.load(persisted)
+        #expect(state.loadedShortcut?.name == "Renamed")
         #expect(!state.hasUnsavedChanges)
     }
 

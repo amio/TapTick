@@ -174,7 +174,6 @@ struct ApplicationsView: View {
                                 baseIndex: sortedApps.count,
                                 onRemove: { id in
                                     store.remove(id: id)
-                                    hotkeyService.restart(store: store)
                                 }
                             )
                         }
@@ -215,20 +214,17 @@ struct ApplicationsView: View {
             )
             store.add(shortcut)
         }
-        hotkeyService.restart(store: store)
     }
 
     private func clearHotkey(for app: DiscoveredApp) {
         if let existing = shortcutFor(app: app) {
             store.remove(id: existing.id)
-            hotkeyService.restart(store: store)
         }
     }
 
     private func toggleEnabled(for app: DiscoveredApp) {
         if let existing = shortcutFor(app: app) {
             store.toggleEnabled(id: existing.id)
-            hotkeyService.restart(store: store)
         }
     }
 

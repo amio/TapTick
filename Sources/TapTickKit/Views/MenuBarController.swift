@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 
 /// Manages the single menu bar button containing TapTick's icon, text slots, and native menu.
 ///
@@ -88,12 +89,12 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
             contentView.autoresizingMask = [.width, .height]
             button.setAccessibilityLabel("TapTick")
         }
-        let menu = buildMenu()
+        let menu = buildMenu(ShortcutMenuSnapshot(shortcuts: store.shortcuts))
         menu.delegate = self
         item.menu = menu
         statusItem = item
         statusContentView = contentView
-        updateStatusContent()
+        updateStatusContent(menuBarTextController.renderedSlots)
     }
 
     private func removeStatusItem() {
@@ -105,53 +106,43 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
 
     // MARK: - Observation
 
-    /// Rebuilds the menu whenever `store.shortcuts` changes.
     private func startObservingStore() {
         let observedStore = store
-        storeObservationTask = Task { [weak self, observedStore] in
-            while !Task.isCancelled {
-                await withCheckedContinuation { continuation in
-                    withObservationTracking {
-                        _ = observedStore.shortcuts
-                    } onChange: {
-                        continuation.resume()
-                    }
-                }
-
+        let initial = ShortcutMenuSnapshot(shortcuts: observedStore.shortcuts)
+        let menus = Observations { ShortcutMenuSnapshot(shortcuts: observedStore.shortcuts) }
+        storeObservationTask = Task { [weak self] in
+            var previous = initial
+            for await snapshot in menus {
                 guard !Task.isCancelled else { return }
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                self?.rebuildMenu()
+                guard snapshot != previous else { continue }
+                previous = snapshot
+                self?.rebuildMenu(snapshot)
             }
         }
     }
 
     private func startObservingMenuBarText() {
         let observedController = menuBarTextController
-        textObservationTask = Task { [weak self, observedController] in
-            while !Task.isCancelled {
-                await withCheckedContinuation { continuation in
-                    withObservationTracking {
-                        _ = observedController.renderedSlots
-                    } onChange: {
-                        continuation.resume()
-                    }
-                }
-
+        let initial = observedController.renderedSlots
+        let content = Observations { observedController.renderedSlots }
+        textObservationTask = Task { [weak self] in
+            var previous = initial
+            for await slots in content {
                 guard !Task.isCancelled else { return }
-                self?.updateStatusContent()
+                guard slots != previous else { continue }
+                previous = slots
+                self?.updateStatusContent(slots)
             }
         }
     }
 
-    private func rebuildMenu() {
-        let menu = buildMenu()
+    private func rebuildMenu(_ snapshot: ShortcutMenuSnapshot) {
+        let menu = buildMenu(snapshot)
         menu.delegate = self
         statusItem?.menu = menu
     }
 
-    private func updateStatusContent() {
-        let slots = menuBarTextController.renderedSlots
+    private func updateStatusContent(_ slots: [MenuBarTextRenderedSlot]) {
         statusContentView?.update(slots: slots, animated: true)
 
         let accessibilityValue =
@@ -182,12 +173,12 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
 
     // MARK: - Menu Construction
 
-    private func buildMenu() -> NSMenu {
+    private func buildMenu(_ snapshot: ShortcutMenuSnapshot) -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let appShortcuts = store.shortcuts.filter { $0.isEnabled && $0.action.isLaunchApp }
-        let scriptShortcuts = store.shortcuts.filter { $0.isEnabled && !$0.action.isLaunchApp && $0.keyCombo != nil }
+        let appShortcuts = snapshot.applications
+        let scriptShortcuts = snapshot.scripts
         let hasApps = !appShortcuts.isEmpty
         let hasScripts = !scriptShortcuts.isEmpty
 
@@ -250,7 +241,7 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     /// Build an `NSMenuItem` for a single shortcut, with its app icon and native key equivalent glyph.
-    private func menuItem(for shortcut: Shortcut) -> NSMenuItem {
+    private func menuItem(for shortcut: ShortcutMenuEntry) -> NSMenuItem {
         let keyEquiv: String
         var modMask: NSEvent.ModifierFlags = []
 
@@ -269,7 +260,7 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
         item.keyEquivalentModifierMask = modMask
         item.target = self
         item.representedObject = shortcut.id
-        applyImage(icon(for: shortcut.action), to: item)
+        applyImage(icon(for: shortcut.icon), to: item)
 
         return item
     }
@@ -286,11 +277,11 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     /// Resolve an appropriately-sized icon for the shortcut's action type.
-    private func icon(for action: ShortcutAction) -> NSImage? {
+    private func icon(for icon: ShortcutMenuEntry.Icon) -> NSImage? {
         let size = NSSize(width: 18, height: 18)
 
-        switch action {
-        case .launchApp(let bundleID, _):
+        switch icon {
+        case .application(let bundleID):
             guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
                 return symbolImage("app", size: size)
             }
@@ -298,10 +289,10 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
             appIcon.size = size
             return appIcon
 
-        case .runScript:
+        case .script:
             return symbolImage("terminal", size: size)
 
-        case .runScriptFile:
+        case .legacyFile:
             return symbolImage("doc.text", size: size)
         }
     }
@@ -354,5 +345,41 @@ public extension Notification.Name {
 extension UserDefaults {
     @objc dynamic var showMenuBarIcon: Bool {
         bool(forKey: "showMenuBarIcon")
+    }
+}
+
+/// Only values consumed by the native menu participate in invalidation.
+struct ShortcutMenuSnapshot: Equatable, Sendable {
+    let applications: [ShortcutMenuEntry]
+    let scripts: [ShortcutMenuEntry]
+
+    init(shortcuts: [Shortcut]) {
+        let entries = shortcuts.compactMap(ShortcutMenuEntry.init)
+        applications = entries.filter { if case .application = $0.icon { true } else { false } }
+        scripts = entries.filter { if case .application = $0.icon { false } else { true } }
+    }
+}
+
+struct ShortcutMenuEntry: Equatable, Sendable {
+    enum Icon: Equatable, Sendable {
+        case application(String)
+        case script
+        case legacyFile
+    }
+    let id: UUID
+    let name: String
+    let keyCombo: KeyCombo?
+    let icon: Icon
+
+    init?(_ shortcut: Shortcut) {
+        guard shortcut.isEnabled, shortcut.action.isLaunchApp || shortcut.keyCombo != nil else { return nil }
+        id = shortcut.id
+        name = shortcut.name
+        keyCombo = shortcut.keyCombo
+        switch shortcut.action {
+        case .launchApp(let bundleID, _): icon = .application(bundleID)
+        case .runScript: icon = .script
+        case .runScriptFile: icon = .legacyFile
+        }
     }
 }

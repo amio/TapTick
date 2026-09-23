@@ -152,6 +152,10 @@ public final class CloudSyncService {
             let coordinator = NSFileCoordinator()
             coordinator.coordinate(writingItemAt: url, options: .forReplacing, error: &error) { coordURL in
                 do {
+                    // A local edit must not overwrite remote data this app cannot interpret.
+                    if FileManager.default.fileExists(atPath: coordURL.path) {
+                        _ = try Self.readState(at: coordURL)
+                    }
                     try data.write(to: coordURL, options: .atomic)
                     self.lastSyncDate = Date()
                     self.lastError = nil
@@ -175,32 +179,36 @@ public final class CloudSyncService {
     }
 
     /// Read sync state from iCloud. Returns nil if no cloud file exists.
-    func download() -> ShortcutSyncState? {
+    func download() throws -> ShortcutSyncState? {
         guard isEnabled, isAvailable, let url = cloudFileURL else { return nil }
-        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-
-        var result: ShortcutSyncState?
-        var coordError: NSError?
-        let coordinator = NSFileCoordinator()
-
-        coordinator.coordinate(readingItemAt: url, options: [], error: &coordError) { coordURL in
-            do {
-                let data = try Data(contentsOf: coordURL)
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
-                result = try ShortcutSyncState.decode(from: data, using: decoder)
-            } catch {
-                self.lastError = error.localizedDescription
-                self.logger.error("Download failed: \(error)")
+        var result: Result<ShortcutSyncState?, Error>?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { coordinatedURL in
+            result = Result {
+                do {
+                    return try Self.readState(at: coordinatedURL)
+                } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+                    return nil
+                }
             }
         }
-
-        if let coordError {
-            lastError = coordError.localizedDescription
-            logger.error("Download coordination failed: \(coordError)")
+        do {
+            if let coordinationError { throw coordinationError }
+            guard let result else { throw CocoaError(.fileReadUnknown) }
+            let state = try result.get()
+            lastError = nil
+            return state
+        } catch {
+            lastError = error.localizedDescription
+            logger.error("Download failed: \(error)")
+            throw error
         }
+    }
 
-        return result
+    private static func readState(at url: URL) throws -> ShortcutSyncState {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try ShortcutSyncState.decode(from: Data(contentsOf: url), using: decoder)
     }
 
     // MARK: - Merge
@@ -267,12 +275,16 @@ public final class CloudSyncService {
     }
 
     private func processRemoteChange() {
-        guard let remoteState = download() else { return }
-        logger.info(
-            "Remote change detected: \(remoteState.shortcuts.count) shortcuts and \(remoteState.deletions.count) deletions"
-        )
-        lastSyncDate = Date()
-        onRemoteChange?(remoteState)
+        do {
+            guard let remoteState = try download() else { return }
+            logger.info(
+                "Remote change detected: \(remoteState.shortcuts.count) shortcuts and \(remoteState.deletions.count) deletions"
+            )
+            lastSyncDate = Date()
+            onRemoteChange?(remoteState)
+        } catch {
+            // download owns the observable error; failed reads must not trigger adoption.
+        }
     }
 }
 
