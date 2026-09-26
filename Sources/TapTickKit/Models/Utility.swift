@@ -40,14 +40,14 @@ struct UtilityDescriptor: Identifiable, Hashable, Sendable {
     static let catalog: [UtilityDescriptor] = [
         UtilityDescriptor(
             id: .screenshotTools,
-            title: "Capture & Mark",
-            summary: "Capture a region, mark it up in a polished preview, and copy the result immediately.",
+            title: "CapMark",
+            summary: "Capture a region, annotate it in a preview, and copy the finished image.",
             systemImage: "camera.viewfinder",
             availability: .available,
             highlights: [
-                "Instant clipboard capture",
-                "Refined mark-up preview",
-                "Clipboard-first output",
+                "Region capture",
+                "Line and rectangle annotations",
+                "Copy the finished image",
             ]
         ),
         UtilityDescriptor(
@@ -212,15 +212,9 @@ struct KeystrokeOverlayConfiguration: Codable, Hashable, Sendable {
 
 struct ScreenshotToolsConfiguration: Hashable, Sendable {
     var isEnabled: Bool
-    var captureToClipboardHotkey: KeyCombo
     var captureAndMarkHotkey: KeyCombo
     var lastAnnotationMode: AnnotationMode
     var lastAnnotationColorIndex: Int
-
-    static let defaultCaptureToClipboardHotkey = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_N),
-        modifiers: [.command, .control, .option]
-    )
 
     static let defaultCaptureAndMarkHotkey = KeyCombo(
         keyCode: UInt32(kVK_ANSI_M),
@@ -229,7 +223,6 @@ struct ScreenshotToolsConfiguration: Hashable, Sendable {
 
     static let `default` = ScreenshotToolsConfiguration(
         isEnabled: false,
-        captureToClipboardHotkey: defaultCaptureToClipboardHotkey,
         captureAndMarkHotkey: defaultCaptureAndMarkHotkey,
         lastAnnotationMode: .freehand,
         lastAnnotationColorIndex: 0
@@ -301,14 +294,13 @@ struct LargeTypeConfiguration: Hashable, Sendable {
 // Backward-compatible Codable: new fields default gracefully when absent from older JSON.
 extension ScreenshotToolsConfiguration: Codable {
     enum CodingKeys: String, CodingKey {
-        case isEnabled, captureToClipboardHotkey, captureAndMarkHotkey
+        case isEnabled, captureAndMarkHotkey
         case lastAnnotationMode, lastAnnotationColorIndex
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         isEnabled = try c.decode(Bool.self, forKey: .isEnabled)
-        captureToClipboardHotkey = try c.decode(KeyCombo.self, forKey: .captureToClipboardHotkey)
         captureAndMarkHotkey = try c.decode(KeyCombo.self, forKey: .captureAndMarkHotkey)
         lastAnnotationMode = try c.decodeIfPresent(AnnotationMode.self, forKey: .lastAnnotationMode) ?? .freehand
         lastAnnotationColorIndex = try c.decodeIfPresent(Int.self, forKey: .lastAnnotationColorIndex) ?? 0

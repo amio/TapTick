@@ -6,15 +6,6 @@ import Foundation
 final class ScreenshotService {
     private var previewWindow: ScreenshotPreviewWindow?
 
-    /// Interactive capture → clipboard (no preview UI).
-    func captureToClipboard() {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        task.arguments = ["-ic"]
-        task.terminationHandler = { _ in }
-        try? task.run()
-    }
-
     /// Interactive capture → temp file → annotation preview window.
     /// - Parameters:
     ///   - initialMode: The draw mode to restore from the last session.

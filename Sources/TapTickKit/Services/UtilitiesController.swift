@@ -94,7 +94,6 @@ public final class UtilitiesController {
             (.keystrokeOverlay, "toggle", keystrokeOverlay.hotkey)
         ]
         if screenshotTools.isEnabled {
-            hotkeys.append((.screenshotTools, "captureClipboard", screenshotTools.captureToClipboardHotkey))
             hotkeys.append((.screenshotTools, "captureAndMark", screenshotTools.captureAndMarkHotkey))
         }
         if largeType.isEnabled {
@@ -122,11 +121,6 @@ public final class UtilitiesController {
 
     func setScreenshotToolsEnabled(_ isEnabled: Bool) {
         screenshotTools.isEnabled = isEnabled
-    }
-
-    func updateScreenshotCaptureToClipboardHotkey(_ combo: KeyCombo) {
-        guard screenshotTools.captureToClipboardHotkey != combo else { return }
-        screenshotTools.captureToClipboardHotkey = combo
     }
 
     func updateScreenshotCaptureAndMarkHotkey(_ combo: KeyCombo) {
@@ -198,8 +192,6 @@ public final class UtilitiesController {
         case .screenshotTools:
             guard screenshotTools.isEnabled else { return }
             switch action {
-            case "captureClipboard":
-                screenshotService.captureToClipboard()
             case "captureAndMark":
                 screenshotService.captureAndMark(
                     initialMode: screenshotTools.lastAnnotationMode,

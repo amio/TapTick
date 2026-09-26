@@ -64,6 +64,48 @@ struct UtilitiesControllerTests {
         #expect(reloaded.largeType.hotkey == overrideHotkey)
     }
 
+    @Test("Legacy capture hotkey is removed while CapMark binding survives")
+    @MainActor
+    func dropsLegacyCaptureHotkey() throws {
+        let directory = makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let markHotkey = KeyCombo(
+            keyCode: UInt32(kVK_ANSI_Semicolon),
+            modifiers: [.command, .option]
+        )
+        let captureHotkey = KeyCombo(
+            keyCode: UInt32(kVK_ANSI_N),
+            modifiers: [.command, .control, .option]
+        )
+        let encoded = try JSONEncoder().encode(UtilityConfiguration.default)
+        var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var screenshotTools = try #require(object["screenshotTools"] as? [String: Any])
+        screenshotTools["isEnabled"] = true
+        screenshotTools["captureAndMarkHotkey"] = try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(markHotkey)
+        )
+        screenshotTools["captureToClipboardHotkey"] = try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(captureHotkey)
+        )
+        object["screenshotTools"] = screenshotTools
+        let fileURL = directory.appendingPathComponent("utilities.json")
+        try JSONSerialization.data(withJSONObject: object).write(to: fileURL)
+
+        let controller = UtilitiesController(directory: directory)
+        let reserved = controller.reservedHotkeys().filter { $0.featureID == .screenshotTools }
+        #expect(reserved.count == 1)
+        #expect(reserved.first?.action == "captureAndMark")
+        #expect(reserved.first?.combo == markHotkey)
+        #expect(reserved.contains(where: { $0.combo == captureHotkey }) == false)
+
+        controller.screenshotTools.lastAnnotationMode = .rectangle
+        let saved = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: fileURL)) as? [String: Any])
+        let savedScreenshotTools = try #require(saved["screenshotTools"] as? [String: Any])
+        #expect(savedScreenshotTools["captureToClipboardHotkey"] == nil)
+    }
+
     @Test("Older utility configuration receives Large Type defaults")
     func decodesLargeTypeDefaultsFromOlderConfiguration() throws {
         let encoded = try JSONEncoder().encode(UtilityConfiguration.default)

@@ -46,7 +46,6 @@ struct UtilityDetailView: View {
     let selectedFeatureID: UtilityID
 
     @State private var isRecordingKeystrokeOverlayHotkey = false
-    @State private var isRecordingScreenshotCaptureHotkey = false
     @State private var isRecordingScreenshotMarkHotkey = false
     @State private var isRecordingLargeTypeHotkey = false
 
@@ -118,7 +117,6 @@ struct UtilityDetailView: View {
             )
         case .screenshotTools:
             ScreenshotToolsSettingsPane(
-                isRecordingCaptureHotkey: $isRecordingScreenshotCaptureHotkey,
                 isRecordingMarkHotkey: $isRecordingScreenshotMarkHotkey
             )
         case .largeType:
@@ -528,13 +526,12 @@ private struct ScreenshotToolsSettingsPane: View {
     @Environment(UtilitiesController.self) private var utilities
     @Environment(HotkeyService.self) private var hotkeyService
 
-    @Binding var isRecordingCaptureHotkey: Bool
     @Binding var isRecordingMarkHotkey: Bool
 
     var body: some View {
         ScrollView {
             Form {
-                hotkeysSection
+                hotkeySection
                 usageSection
             }
             .settingsFormStyle()
@@ -543,55 +540,16 @@ private struct ScreenshotToolsSettingsPane: View {
         }
     }
 
-    // MARK: - Hotkeys
+    // MARK: - Hotkey
 
-    private var hotkeysSection: some View {
-        Section("Hotkeys") {
-            LabeledContent("Capture to Clipboard") {
-                HStack(spacing: 8) {
-                    HotkeyBindingControl(
-                        keyCombo: utilities.screenshotTools.captureToClipboardHotkey,
-                        isRecording: isRecordingCaptureHotkey,
-                        onStartRecording: {
-                            isRecordingMarkHotkey = false
-                            isRecordingCaptureHotkey = true
-                        },
-                        onRecordKey: { combo in
-                            utilities.updateScreenshotCaptureToClipboardHotkey(combo)
-                            isRecordingCaptureHotkey = false
-                        },
-                        onCancelRecording: {
-                            isRecordingCaptureHotkey = false
-                        },
-                        checkConflict: { combo in
-                            hotkeyService.hasConflict(
-                                keyCombo: combo,
-                                excludingUtilityID: .screenshotTools
-                            )
-                        },
-                        emptyTitle: "Record Hotkey"
-                    )
-
-                    Button("Default") {
-                        utilities.updateScreenshotCaptureToClipboardHotkey(
-                            ScreenshotToolsConfiguration.defaultCaptureToClipboardHotkey
-                        )
-                    }
-                    .controlSize(.small)
-                    .disabled(
-                        utilities.screenshotTools.captureToClipboardHotkey
-                            == ScreenshotToolsConfiguration.defaultCaptureToClipboardHotkey
-                    )
-                }
-            }
-
-            LabeledContent("Capture & Mark") {
+    private var hotkeySection: some View {
+        Section {
+            LabeledContent("Hotkey") {
                 HStack(spacing: 8) {
                     HotkeyBindingControl(
                         keyCombo: utilities.screenshotTools.captureAndMarkHotkey,
                         isRecording: isRecordingMarkHotkey,
                         onStartRecording: {
-                            isRecordingCaptureHotkey = false
                             isRecordingMarkHotkey = true
                         },
                         onRecordKey: { combo in
@@ -630,61 +588,39 @@ private struct ScreenshotToolsSettingsPane: View {
     private var usageSection: some View {
         Section("How It Works") {
             VStack(alignment: .leading, spacing: 12) {
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Capture to Clipboard")
-                            .font(.body.weight(.medium))
-                        Text("Select a region and copy it right away, with no preview window.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: "doc.on.clipboard")
-                        .foregroundStyle(.secondary)
-                }
-
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Capture & Mark")
-                            .font(.body.weight(.medium))
-                        Text("Select a region to open the mark-up preview, annotate, then press ↩ to copy.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: "pencil.and.outline")
-                        .foregroundStyle(.secondary)
-                }
+                Text("Select a region, annotate it in the preview, then press Return to copy the image.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
 
                 Divider()
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Preview Shortcuts")
-                        .font(.caption.weight(.semibold))
+                    Text("Marking Shortcuts")
+                        .font(.callout.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
                         GridRow {
                             keycap("⌥")
-                            Text("Tap to switch freehand / rect, hold to swap temporarily")
+                            Text("Tap to switch Line and Rect; hold to use the other tool until release")
                         }
                         GridRow {
                             keycap("TAB")
-                            Text("Cycle annotation colors")
+                            Text("Next color; Shift-Tab for previous")
                         }
                         GridRow {
                             keycap("⌘ Z")
-                            Text("Undo the last mark")
+                            Text("Undo the last annotation")
                         }
                         GridRow {
                             keycap("↩")
-                            Text("Copy and close")
+                            Text("Copy the annotated image and close")
                         }
                         GridRow {
                             keycap("ESC")
-                            Text("Cancel")
+                            Text("Close without copying")
                         }
                     }
-                    .font(.caption)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                 }
             }
@@ -693,7 +629,7 @@ private struct ScreenshotToolsSettingsPane: View {
 
     private func keycap(_ label: String) -> some View {
         Text(label)
-            .font(.system(.caption, design: .rounded, weight: .medium))
+            .font(.system(.callout, design: .rounded, weight: .medium))
             .foregroundStyle(.primary)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
