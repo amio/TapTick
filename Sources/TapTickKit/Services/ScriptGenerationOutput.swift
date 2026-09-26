@@ -9,6 +9,10 @@ struct ScriptGenerationOutput {
     private var parts: [String: String] = [:]
     private var partOrder: [String] = []
 
+    init(provider: ScriptGenerationProvider) {
+        self.provider = provider
+    }
+
     mutating func receive(_ data: Data) throws {
         buffer.append(data)
         while let newline = buffer.firstIndex(of: 10) {
