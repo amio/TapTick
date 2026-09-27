@@ -63,27 +63,26 @@ public final class ScriptOutputPresenter {
 
     public func show(log: ScriptExecutionLog) {
         guard let subtitleText = log.subtitleText else { return }
-        let display = subtitleText.split(whereSeparator: \.isNewline).joined(separator: " ")
-        guard !display.isEmpty else { return }
-
-        let item = ScriptOutputToastItem(
-            text: display,
-            textWidth: ScriptOutputToastMetrics.textWidth(for: display),
-            isError: !log.succeeded
-        )
+        let items = subtitleText.split(whereSeparator: \.isNewline).map { line in
+            let text = String(line)
+            return ScriptOutputToastItem(
+                text: text,
+                textWidth: ScriptOutputToastMetrics.textWidth(for: text),
+                isError: !log.succeeded
+            )
+        }
+        guard let firstItem = items.first else { return }
 
         switch lifecycle {
-        case .entering, .swapping:
-            pendingItems.append(item)
-        case .holding:
-            resetHoldCountdown()
-            startContentSwap(to: item)
+        case .entering, .holding, .swapping:
+            pendingItems.append(contentsOf: items)
+            updateRemainingCounts()
         case .hidden, .dismissing:
-            presentFresh(item)
+            presentFresh(firstItem, pending: Array(items.dropFirst()))
         }
     }
 
-    private func presentFresh(_ item: ScriptOutputToastItem) {
+    private func presentFresh(_ item: ScriptOutputToastItem, pending: [ScriptOutputToastItem]) {
         if lifecycle != .hidden {
             persistVerticalPosition()
         }
@@ -94,9 +93,10 @@ public final class ScriptOutputPresenter {
         bodyAnimator.cancel()
         clearCopyFeedback()
         resetHoldCountdown()
-        pendingItems.removeAll()
+        pendingItems = pending
         model.currentItem = item
         model.nextItem = nil
+        updateRemainingCounts()
         model.viewportTextWidth = item.textWidth
         model.contentSwapProgress = 0
         model.phase = .hidden
@@ -196,6 +196,11 @@ public final class ScriptOutputPresenter {
 
             remainingHoldDuration = 0
             holdDeadline = nil
+            if !pendingItems.isEmpty {
+                hideTask = nil
+                startContentSwap(to: pendingItems.removeFirst())
+                return
+            }
             lifecycle = .dismissing
             await dismissToast()
         }
@@ -218,7 +223,7 @@ public final class ScriptOutputPresenter {
                 model.phase = .revealed
                 applyAppearanceProgress(1)
                 entranceTask = nil
-                showNextPendingItemOrBeginHold()
+                beginHold()
                 return
             }
 
@@ -242,7 +247,7 @@ public final class ScriptOutputPresenter {
             applyBodyProgress(1)
             model.phase = .revealed
             entranceTask = nil
-            showNextPendingItemOrBeginHold()
+            beginHold()
         }
     }
 
@@ -252,12 +257,13 @@ public final class ScriptOutputPresenter {
 
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             finishContentSwap(with: item)
-            showNextPendingItemOrBeginHold()
+            beginHold()
             return
         }
 
         let startWidth = model.viewportTextWidth
         model.nextItem = item
+        updateRemainingCounts()
         model.contentSwapProgress = 0
         contentSwapTask = Task { [weak self] in
             guard let self else { return }
@@ -282,7 +288,7 @@ public final class ScriptOutputPresenter {
             )
             finishContentSwap(with: item)
             contentSwapTask = nil
-            showNextPendingItemOrBeginHold()
+            beginHold()
         }
     }
 
@@ -301,18 +307,15 @@ public final class ScriptOutputPresenter {
         clearCopyFeedback()
         model.currentItem = item
         model.nextItem = nil
+        updateRemainingCounts()
         model.viewportTextWidth = item.textWidth
         model.contentSwapProgress = 0
         resizeExpandedPanel(textWidth: item.textWidth)
     }
 
-    private func showNextPendingItemOrBeginHold() {
-        guard !pendingItems.isEmpty else {
-            beginHold()
-            return
-        }
-
-        startContentSwap(to: pendingItems.removeFirst())
+    private func updateRemainingCounts() {
+        model.currentRemainingCount = pendingItems.count + (model.nextItem == nil ? 0 : 1)
+        model.nextRemainingCount = pendingItems.count
     }
 
     private func dismissToast() async {
@@ -506,6 +509,8 @@ private struct ScriptOutputToastItem {
 private final class ScriptOutputPresentationModel {
     var currentItem = ScriptOutputToastItem.empty
     var nextItem: ScriptOutputToastItem?
+    var currentRemainingCount = 0
+    var nextRemainingCount = 0
     var viewportTextWidth = CGFloat.zero
     var contentRevealProgress = CGFloat.zero
     var contentSwapProgress = CGFloat.zero
@@ -687,19 +692,28 @@ private struct ScriptOutputToastContentView: View {
                         textWidth: model.viewportTextWidth,
                         isError: false
                     ),
+                    remainingCount: 0,
                     phase: model.phase
                 )
                 .transition(.opacity)
             } else {
-                toastContent(item: model.currentItem, phase: model.phase)
-                    .offset(y: -model.contentSwapProgress * ScriptOutputToastMetrics.collapsedDiameter)
+                toastContent(
+                    item: model.currentItem,
+                    remainingCount: model.currentRemainingCount,
+                    phase: model.phase
+                )
+                .offset(y: -model.contentSwapProgress * ScriptOutputToastMetrics.collapsedDiameter)
 
                 if let nextItem = model.nextItem {
-                    toastContent(item: nextItem, phase: model.phase)
-                        .offset(
-                            y: (1 - model.contentSwapProgress)
-                                * ScriptOutputToastMetrics.collapsedDiameter
-                        )
+                    toastContent(
+                        item: nextItem,
+                        remainingCount: model.nextRemainingCount,
+                        phase: model.phase
+                    )
+                    .offset(
+                        y: (1 - model.contentSwapProgress)
+                            * ScriptOutputToastMetrics.collapsedDiameter
+                    )
                 }
             }
         }
@@ -736,10 +750,11 @@ private struct ScriptOutputToastContentView: View {
 
     private func toastContent(
         item: ScriptOutputToastItem,
+        remainingCount: Int,
         phase: ScriptOutputToastPhase
     ) -> some View {
         HStack(spacing: ScriptOutputToastMetrics.contentSpacing) {
-            statusSymbol(isError: item.isError, phase: phase)
+            statusSymbol(isError: item.isError, remainingCount: remainingCount, phase: phase)
 
             Text(item.text)
                 .font(.system(size: 16, weight: .medium, design: .monospaced))
@@ -767,14 +782,23 @@ private struct ScriptOutputToastContentView: View {
 
     private func statusSymbol(
         isError: Bool,
+        remainingCount: Int,
         phase: ScriptOutputToastPhase
     ) -> some View {
         ZStack {
             Circle()
                 .stroke(Color.primary.opacity(0.72), lineWidth: 1.5)
 
-            Image(systemName: isError ? "exclamationmark" : "checkmark")
-                .font(.system(size: ScriptOutputToastMetrics.statusGlyphSize, weight: .bold))
+            if remainingCount > 0 {
+                Text(verbatim: String(remainingCount))
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .frame(width: ScriptOutputToastMetrics.statusSymbolSize - 6)
+            } else {
+                Image(systemName: isError ? "exclamationmark" : "checkmark")
+                    .font(.system(size: ScriptOutputToastMetrics.statusGlyphSize, weight: .bold))
+            }
         }
         .foregroundStyle(.primary)
         .frame(
