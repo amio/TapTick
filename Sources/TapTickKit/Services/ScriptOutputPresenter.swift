@@ -47,6 +47,7 @@ public final class ScriptOutputPresenter {
     private lazy var bodyAnimator = ScriptOutputSmootherstepAnimator(view: toastView)
     private var entranceTask: Task<Void, Never>?
     private var contentSwapTask: Task<Void, Never>?
+    private var copyFeedbackTask: Task<Void, Never>?
     private var hideTask: Task<Void, Never>?
     private var lifecycle = ScriptOutputToastLifecycle.hidden
     private var pendingItems: [ScriptOutputToastItem] = []
@@ -58,6 +59,7 @@ public final class ScriptOutputPresenter {
 
     /// How long the toast stays fully visible after its entrance animation.
     private let holdDuration: TimeInterval = 2
+    private let copyFeedbackDuration: TimeInterval = 0.8
 
     public func show(log: ScriptExecutionLog) {
         guard let subtitleText = log.subtitleText else { return }
@@ -90,6 +92,7 @@ public final class ScriptOutputPresenter {
         contentSwapTask?.cancel()
         appearanceAnimator.cancel()
         bodyAnimator.cancel()
+        clearCopyFeedback()
         resetHoldCountdown()
         pendingItems.removeAll()
         model.currentItem = item
@@ -146,7 +149,26 @@ public final class ScriptOutputPresenter {
 
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(item.text, forType: .string)
+        guard pasteboard.setString(item.text, forType: .string) else { return }
+
+        copyFeedbackTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.15)) {
+            model.isCopyFeedbackVisible = true
+        }
+        copyFeedbackTask = Task { [weak self] in
+            guard let self, await wait(for: copyFeedbackDuration) else { return }
+
+            withAnimation(.easeInOut(duration: 0.15)) {
+                model.isCopyFeedbackVisible = false
+            }
+            copyFeedbackTask = nil
+        }
+    }
+
+    private func clearCopyFeedback() {
+        copyFeedbackTask?.cancel()
+        copyFeedbackTask = nil
+        model.isCopyFeedbackVisible = false
     }
 
     private func pauseHoldCountdown() {
@@ -225,6 +247,7 @@ public final class ScriptOutputPresenter {
     }
 
     private func startContentSwap(to item: ScriptOutputToastItem) {
+        clearCopyFeedback()
         lifecycle = .swapping
 
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
@@ -275,6 +298,7 @@ public final class ScriptOutputPresenter {
     }
 
     private func finishContentSwap(with item: ScriptOutputToastItem) {
+        clearCopyFeedback()
         model.currentItem = item
         model.nextItem = nil
         model.viewportTextWidth = item.textWidth
@@ -292,6 +316,7 @@ public final class ScriptOutputPresenter {
     }
 
     private func dismissToast() async {
+        clearCopyFeedback()
         if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             let bodyDuration = ScriptOutputToastTiming.bodyDuration(
                 forTextWidth: model.currentItem.textWidth
@@ -484,6 +509,7 @@ private final class ScriptOutputPresentationModel {
     var viewportTextWidth = CGFloat.zero
     var contentRevealProgress = CGFloat.zero
     var contentSwapProgress = CGFloat.zero
+    var isCopyFeedbackVisible = false
     var phase = ScriptOutputToastPhase.compact
 }
 
@@ -580,6 +606,7 @@ private enum ScriptOutputToastPosition {
 
 @MainActor
 private enum ScriptOutputToastMetrics {
+    static let copyFeedbackText = "Copied"
     static let collapsedDiameter: CGFloat = 58
     static let initialAppearanceScale: CGFloat = 0.3
     static let horizontalPadding: CGFloat = 12
@@ -591,6 +618,9 @@ private enum ScriptOutputToastMetrics {
     private static let widthQuantum: CGFloat = 2
 
     private static let textFont = NSFont.monospacedSystemFont(ofSize: 16, weight: .medium)
+    private static let minimumTextWidth = ceil(
+        (copyFeedbackText as NSString).size(withAttributes: [.font: textFont]).width
+    )
 
     static func textWidth(for text: String) -> CGFloat {
         let bounds = (text as NSString).boundingRect(
@@ -602,7 +632,7 @@ private enum ScriptOutputToastMetrics {
             attributes: [.font: textFont],
             context: nil
         )
-        return min(maximumTextWidth, ceil(max(1, bounds.width)))
+        return min(maximumTextWidth, ceil(max(minimumTextWidth, bounds.width)))
     }
 
     static func contentSize(forTextWidth textWidth: CGFloat) -> NSSize {
@@ -650,15 +680,27 @@ private struct ScriptOutputToastContentView: View {
 
     var body: some View {
         ZStack {
-            toastContent(item: model.currentItem, phase: model.phase)
-                .offset(y: -model.contentSwapProgress * ScriptOutputToastMetrics.collapsedDiameter)
+            if model.isCopyFeedbackVisible {
+                toastContent(
+                    item: ScriptOutputToastItem(
+                        text: ScriptOutputToastMetrics.copyFeedbackText,
+                        textWidth: model.viewportTextWidth,
+                        isError: false
+                    ),
+                    phase: model.phase
+                )
+                .transition(.opacity)
+            } else {
+                toastContent(item: model.currentItem, phase: model.phase)
+                    .offset(y: -model.contentSwapProgress * ScriptOutputToastMetrics.collapsedDiameter)
 
-            if let nextItem = model.nextItem {
-                toastContent(item: nextItem, phase: model.phase)
-                    .offset(
-                        y: (1 - model.contentSwapProgress)
-                            * ScriptOutputToastMetrics.collapsedDiameter
-                    )
+                if let nextItem = model.nextItem {
+                    toastContent(item: nextItem, phase: model.phase)
+                        .offset(
+                            y: (1 - model.contentSwapProgress)
+                                * ScriptOutputToastMetrics.collapsedDiameter
+                        )
+                }
             }
         }
         .offset(x: compactBodyOffset)
@@ -671,8 +713,12 @@ private struct ScriptOutputToastContentView: View {
         .clipped()
         .fixedSize(horizontal: true, vertical: true)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityItem.isError ? "Script failed" : "Script completed")
-        .accessibilityValue(accessibilityItem.text)
+        .accessibilityLabel(
+            model.isCopyFeedbackVisible
+                ? "Copied to clipboard"
+                : accessibilityItem.isError ? "Script failed" : "Script completed"
+        )
+        .accessibilityValue(model.isCopyFeedbackVisible ? "" : accessibilityItem.text)
     }
 
     private var accessibilityItem: ScriptOutputToastItem {
