@@ -10,6 +10,8 @@ struct GeneralSettingsView: View {
 
     @AppStorage("showDockIcon") private var showDockIcon = false
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
+    @AppStorage(ScriptOutputToastSettings.holdDurationKey)
+    private var toastHoldDuration = ScriptOutputToastSettings.defaultHoldDuration
     @State private var isRecordingSettingsWindowHotkey = false
     @State private var isImportingShortcuts = false
     @State private var isExportingShortcuts = false
@@ -21,6 +23,7 @@ struct GeneralSettingsView: View {
         Form {
             statusSection
             startupSection
+            toastSection
             globalHotkeysSection
             dataAndSyncSection
         }
@@ -91,6 +94,41 @@ struct GeneralSettingsView: View {
         } header: {
             Text("Startup & Appearance")
         }
+    }
+
+    // MARK: - Toast Notifications
+
+    private var toastSection: some View {
+        Section {
+            LabeledContent("Message Duration") {
+                HStack(spacing: 12) {
+                    Slider(
+                        value: toastHoldDurationBinding,
+                        in: ScriptOutputToastSettings.holdDurationRange
+                    )
+                    .accessibilityLabel("Message Duration")
+                    .frame(width: 200)
+
+                    Text("\(toastHoldDurationBinding.wrappedValue.formatted(.number.precision(.fractionLength(1)))) s")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .frame(width: 42, alignment: .trailing)
+                }
+            }
+
+            Text("Time each script output message stays visible before the next one appears.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Toast Notifications")
+        }
+    }
+
+    private var toastHoldDurationBinding: Binding<TimeInterval> {
+        Binding(
+            get: { ScriptOutputToastSettings.normalizedHoldDuration(toastHoldDuration) },
+            set: { toastHoldDuration = ScriptOutputToastSettings.normalizedHoldDuration($0) }
+        )
     }
 
     // MARK: - Global Hotkeys

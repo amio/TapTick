@@ -19,6 +19,29 @@ private extension CGRect {
     }
 }
 
+enum ScriptOutputToastSettings {
+    static let holdDurationKey = "scriptOutputToastHoldDuration"
+    static let defaultHoldDuration: TimeInterval = 2.4
+    static let holdDurationRange: ClosedRange<TimeInterval> = 1.2...6
+    static let holdDurationStep: TimeInterval = 0.6
+
+    static func normalizedHoldDuration(_ duration: TimeInterval) -> TimeInterval {
+        guard duration.isFinite else { return defaultHoldDuration }
+
+        let clamped = min(max(duration, holdDurationRange.lowerBound), holdDurationRange.upperBound)
+        let steps = ((clamped - holdDurationRange.lowerBound) / holdDurationStep).rounded()
+        return ((holdDurationRange.lowerBound + steps * holdDurationStep) * 10).rounded() / 10
+    }
+
+    static func holdDuration(defaults: UserDefaults = .standard) -> TimeInterval {
+        guard
+            let storedDuration = defaults.object(forKey: holdDurationKey) as? TimeInterval
+        else { return defaultHoldDuration }
+
+        return normalizedHoldDuration(storedDuration)
+    }
+}
+
 /// Displays script output in a transient Liquid Glass toast at the center of the screen.
 @MainActor
 public final class ScriptOutputPresenter {
@@ -57,8 +80,6 @@ public final class ScriptOutputPresenter {
     /// Stable screen-space origin. Only fresh placement or a completed drag may change it.
     private var centerAnchor: CGPoint?
 
-    /// How long the toast stays fully visible after its entrance animation.
-    private let holdDuration: TimeInterval = 2
     private let copyFeedbackDuration: TimeInterval = 0.8
 
     public func show(log: ScriptExecutionLog) {
@@ -115,7 +136,7 @@ public final class ScriptOutputPresenter {
     // MARK: - Panel Lifecycle
 
     private func beginHold() {
-        remainingHoldDuration = holdDuration
+        remainingHoldDuration = ScriptOutputToastSettings.holdDuration()
         lifecycle = .holding
         isPointerHovering = toastView.isPointerInsideGlass
 
@@ -209,7 +230,7 @@ public final class ScriptOutputPresenter {
     private func resetHoldCountdown() {
         hideTask?.cancel()
         hideTask = nil
-        remainingHoldDuration = holdDuration
+        remainingHoldDuration = ScriptOutputToastSettings.holdDuration()
         holdDeadline = nil
         isPointerHovering = false
     }
