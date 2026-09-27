@@ -37,6 +37,9 @@ public final class ScriptOutputPresenter {
         view.onDragEnded = { [weak self] in
             self?.handleDragEnd()
         }
+        view.onDoubleClick = { [weak self] in
+            self?.copyVisibleText()
+        }
         return view
     }()
     private lazy var panel: NSPanel = makePanel()
@@ -132,6 +135,18 @@ public final class ScriptOutputPresenter {
     private func handleDragEnd() {
         centerAnchor = panel.frame.center
         persistVerticalPosition()
+    }
+
+    private func copyVisibleText() {
+        let item =
+            model.contentSwapProgress >= 0.5
+            ? model.nextItem ?? model.currentItem
+            : model.currentItem
+        guard !item.text.isEmpty else { return }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(item.text, forType: .string)
     }
 
     private func pauseHoldCountdown() {
@@ -771,6 +786,7 @@ private final class ScriptOutputGlassToastView: NSView {
 
     var onHoverChanged: ((Bool) -> Void)?
     var onDragEnded: (() -> Void)?
+    var onDoubleClick: (() -> Void)?
 
     private let glassView: NSGlassEffectView
     private let glassContentView: ScriptOutputGlassContentView
@@ -835,6 +851,11 @@ private final class ScriptOutputGlassToastView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            onDoubleClick?()
+            return
+        }
+
         window?.performDrag(with: event)
         onDragEnded?()
     }
