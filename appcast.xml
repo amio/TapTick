@@ -3,6 +3,15 @@
     <channel>
         <title>KeyMagic</title>
         <item>
+            <title>1.8.0</title>
+            <pubDate>Tue, 29 Sep 2026 15:42:31 +0000</pubDate>
+            <link>https://amio.github.io/TapTick/</link>
+            <sparkle:version>51</sparkle:version>
+            <sparkle:shortVersionString>1.8.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.8.0/TapTick-1.8.0.dmg" length="4153630" type="application/octet-stream" sparkle:edSignature="JwFQxp/IkaXdgfoCbfpagNOypjLP5Vw+ruK6gvUClk9FmzE/T1flgah2MfnBQYXN8xeQUWZUMptlEosTK1drAw=="/>
+        </item>
+        <item>
             <title>1.7.2</title>
             <pubDate>Sat, 26 Sep 2026 06:11:19 +0000</pubDate>
             <link>https://amio.github.io/TapTick/</link>
@@ -19,15 +28,6 @@
             <sparkle:shortVersionString>1.6.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/amio/TapTick/releases/download/v1.6.0/TapTick-1.6.0.dmg" length="3881300" type="application/octet-stream" sparkle:edSignature="9OB2hH4xaaYcUIIcAinhJOsB1r1ddWFeqy29KQJPbDhDChQbNWap7IYqs55gB+wN9G4ePo0Xw3npJtK9Ny3fDA=="/>
-        </item>
-        <item>
-            <title>1.5.5</title>
-            <pubDate>Tue, 01 Sep 2026 07:50:16 +0000</pubDate>
-            <link>https://amio.github.io/TapTick/</link>
-            <sparkle:version>46</sparkle:version>
-            <sparkle:shortVersionString>1.5.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.5.5/TapTick-1.5.5.dmg" length="3834958" type="application/octet-stream" sparkle:edSignature="uFxrmIGHv48f5Wu+4cuQLImg6mu8UvMgKhzPdt1rlXkJZYzH9yrKHzmWwdiLV+FymfUOg+6L7aMq6t0JjrVSDQ=="/>
         </item>
         <item>
             <title>1.4.3</title>
