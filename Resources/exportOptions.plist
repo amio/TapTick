@@ -13,9 +13,18 @@
          locally via Makefile and in CI via the workflow). Keeping it out of
          exportArchive avoids needing Apple ID credentials at export time. -->
 
-    <!-- Use the identity already embedded in the archive; do not re-sign -->
+    <!-- Embed the CloudKit-enabled Developer ID profile during export. -->
     <key>signingStyle</key>
-    <string>automatic</string>
+    <string>manual</string>
+    <key>signingCertificate</key>
+    <string>Developer ID Application</string>
+    <key>iCloudContainerEnvironment</key>
+    <string>Production</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.taptick.app</key>
+        <string>TapTick Developer ID CloudKit</string>
+    </dict>
 
     <!-- Strip Swift standard libraries that are already in the OS -->
     <key>stripSwiftSymbols</key>

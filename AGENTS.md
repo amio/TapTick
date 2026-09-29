@@ -16,14 +16,14 @@
 - **Stack**: Swift 6, SwiftUI plus focused AppKit integration, and an SPM monorepo containing the `TapTickKit` library and `TapTick` app. XcodeGen generates Xcode 27 project metadata.
 - **Platform**: macOS 26+ menu-bar utility. Carbon owns permission-free registered global hotkeys; AppKit owns native status items, panels, process launching, and macOS permission or workspace integration where SwiftUI is not the correct boundary.
 - **Constraints**: The app executes user-selected shell scripts. Generated project state, release signing/notarization, Sparkle appcast inputs, macOS privacy identity, and forward-compatible stored data must remain consistent across local and CI workflows.
-- **Stage**: iCloud shortcut-sync code and migration support exist, but distribution entitlements remain disabled pending provisioning. Do not present sync as release-enabled or enable the commented entitlements without an explicit provisioning and rollout decision.
+- **CloudKit**: Debug and Release use separate containers and environments. Keep CloudKit/push entitlements, provisioning profiles, `Resources/CloudKit.ckdb`, and local/CI signing workflows consistent. Sync uses the private database; never move shortcut or script data into the public database.
 
 # ARCHITECTURE INDEX
 
 ## Ownership Map
 
 - `Sources/TapTick/App/TapTickApp.swift` is the composition root: `AppState` owns process-lifetime services and `AppDelegate` owns launch, settings-window, menu-bar, and hotkey wiring.
-- `Sources/TapTickKit/Services/ShortcutStore.swift`, `Sources/TapTickKit/Models/ShortcutSyncState.swift`, and `Sources/TapTickKit/Services/CloudSyncService.swift` own user shortcuts, local/cloud envelopes, deletion records, migrations, merge semantics, and metadata-query lifecycle.
+- `Sources/TapTickKit/Services/ShortcutStore.swift`, `Sources/TapTickKit/Models/ShortcutSyncState.swift`, `Sources/TapTickKit/Services/CloudSyncService.swift`, and `Sources/TapTickKit/Services/CloudSyncSnapshot.swift` own user shortcuts, local/cloud envelopes, deletion records, migrations, merge semantics, account binding, and CKSyncEngine lifecycle.
 - `Sources/TapTickKit/Services/HotkeyService.swift`, `Sources/TapTickKit/Services/UtilitiesController.swift`, and `Sources/TapTickKit/Services/KeystrokeOverlayService.swift` own the global hotkey namespace, utility configuration/routing, permission recovery, and utility runtime lifecycle.
 - `Sources/TapTickKit/Services/ScriptRunner.swift`, `Sources/TapTickKit/Services/ShortcutExecutor.swift`, and `Sources/TapTickKit/Services/ScriptLogStore.swift`, together with `ScriptOutputPresenter`, own context-free script processes, explicit-run policy and active runs, bounded persisted history, and subtitle presentation.
 - `Sources/TapTickKit/Services/MenuBarTextController.swift`, `Sources/TapTickKit/Models/MenuBarTextSlot.swift`, and `Sources/TapTickKit/Views/MenuBarController.swift` own status-text persistence/scheduling/display state, schema normalization, and the sole native `NSStatusItem`/menu.

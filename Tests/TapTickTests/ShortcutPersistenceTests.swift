@@ -233,9 +233,39 @@ struct ShortcutPersistenceTests {
         let store = ShortcutStore(directory: directory, cloudSync: cloud)
         store.add(script("Local"))
         let before = try Data(contentsOf: directory.appendingPathComponent("shortcuts.json"))
-        cloud.onRemoteChange?(ShortcutSyncState(schemaVersion: 999, shortcuts: [], deletions: []))
+        #expect(throws: ShortcutPersistenceError.unsupportedVersion(999)) {
+            try cloud.onRemoteChange?(ShortcutSyncState(schemaVersion: 999, shortcuts: [], deletions: []))
+        }
         #expect(store.scriptDirectoryIssue != nil)
         #expect(store.shortcuts.count == 1)
         #expect(try Data(contentsOf: directory.appendingPathComponent("shortcuts.json")) == before)
     }
+    @Test("Remote script adoption rolls back files on metadata failure and can retry")
+    func remoteAdoptionFailure() throws {
+        let directory = try directory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let cloud = CloudSyncService()
+        let store = ShortcutStore(directory: directory, cloudSync: cloud)
+        store.add(script("Local.sh"))
+        let original = try #require(store.shortcuts.first)
+        let file = directory.appendingPathComponent("shortcuts.json")
+        let bytes = try Data(contentsOf: file)
+        let scriptURL = store.scriptsDirectoryURL.appendingPathComponent("Local.sh")
+        let originalScript = try Data(contentsOf: scriptURL)
+        var remote = original
+        remote.action = .runScript(script: "#!/bin/sh\necho remote")
+        remote.modifiedAt = original.modifiedAt.addingTimeInterval(1)
+        let incoming = ShortcutSyncState(shortcuts: [remote], deletions: [])
+        try FileManager.default.removeItem(at: file)
+        try FileManager.default.createDirectory(at: file, withIntermediateDirectories: false)
+        #expect(throws: (any Error).self) { try cloud.onRemoteChange?(incoming) }
+        #expect(store.shortcuts == [original])
+        #expect(try Data(contentsOf: scriptURL) == originalScript)
+        try FileManager.default.removeItem(at: file)
+        try bytes.write(to: file)
+        try cloud.onRemoteChange?(incoming)
+        #expect(store.shortcuts == [remote])
+        #expect(try String(contentsOf: scriptURL, encoding: .utf8) == "#!/bin/sh\necho remote")
+    }
+
 }

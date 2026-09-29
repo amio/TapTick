@@ -10,6 +10,7 @@
 # Required GitHub Secrets (Settings → Secrets and variables → Actions):
 #   APPLE_CERTIFICATE_BASE64   Base64-encoded Developer ID Application .p12
 #   APPLE_CERTIFICATE_PASSWORD Password for the .p12 file
+#   APPLE_PROVISIONING_PROFILE_BASE64  Base64-encoded CloudKit Developer ID profile
 #   APPLE_TEAM_ID              Apple Developer Team ID (e.g. 3FKXTCP8JU)
 #   APPLE_ID                   Apple ID email used for notarization
 #   APPLE_APP_PASSWORD         App-specific password for notarytool
@@ -165,6 +166,21 @@ jobs:
           echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
 
+      - name: Install CloudKit provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          test -n "$PROFILE_BASE64" || { echo "Missing APPLE_PROVISIONING_PROFILE_BASE64"; exit 1; }
+          PROFILE_PATH="$RUNNER_TEMP/TapTick.provisionprofile"
+          echo "$PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print Name' "$RUNNER_TEMP/profile.plist")
+          test "$PROFILE_NAME" = "TapTick Developer ID CloudKit"
+          PROFILE_DIRECTORY="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$PROFILE_DIRECTORY"
+          cp "$PROFILE_PATH" "$PROFILE_DIRECTORY/$PROFILE_UUID.provisionprofile"
+
       # ---- Read and validate version metadata --------------------------------
 
       - name: Set version
@@ -226,6 +242,7 @@ jobs:
             CURRENT_PROJECT_VERSION="$BUILD_VERSION" \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             CODE_SIGN_STYLE=Manual \
+            TAPTICK_DEVELOPER_ID_PROFILE="TapTick Developer ID CloudKit" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             SPARKLE_ED_PUBLIC_KEY="$SPARKLE_ED_PUBLIC_KEY"
 

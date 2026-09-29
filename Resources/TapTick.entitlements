@@ -2,19 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- iCloud Drive container access for cross-device shortcut sync.
-         DISABLED: requires a Developer ID provisioning profile with iCloud
-         capability registered in the Apple Developer Portal. Re-enable once
-         the profile is created and added to the project.
     <key>com.apple.developer.icloud-container-identifiers</key>
-    <array>
-        <string>iCloud.com.taptick.app</string>
-    </array>
-    <key>com.apple.developer.ubiquity-container-identifiers</key>
-    <array>
-        <string>iCloud.com.taptick.app</string>
-    </array>
-    -->
+    <array><string>iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)</string></array>
+    <key>com.apple.developer.icloud-services</key>
+    <array><string>CloudKit</string></array>
+    <key>com.apple.developer.icloud-container-environment</key>
+    <string>$(TAPTICK_CLOUD_ENVIRONMENT)</string>
+    <key>com.apple.developer.aps-environment</key>
+    <string>$(TAPTICK_PUSH_ENVIRONMENT)</string>
 
     <!-- Hardened Runtime: allow child processes to run unsigned executables
          (needed by ShortcutExecutor when invoking user shell scripts) -->

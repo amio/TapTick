@@ -13,6 +13,9 @@ DEBUG_APP_NAME := TapTick Dev
 #   xcrun notarytool store-credentials "TapTick" --apple-id ... --team-id ... --password ...
 # Override on the command line: make dist NOTARIZE_PROFILE=MyOtherProfile
 NOTARIZE_PROFILE ?= TapTick
+DEVELOPER_ID_PROFILE ?= TapTick Developer ID CloudKit
+# Opt in when Xcode needs to download/update profiles using the signed-in account.
+PROVISIONING_FLAGS ?=
 
 # Detect xcbeautify for prettier xcodebuild output. Preserve both pipeline exit
 # codes explicitly because macOS ships GNU Make 3.81, which ignores .SHELLFLAGS.
@@ -83,6 +86,7 @@ build: ## Build app — Debug (via xcodebuild)
 	    -project $(PROJECT) \
 	    -scheme  $(SCHEME) \
 	    -configuration Debug \
+	    $(PROVISIONING_FLAGS) \
 	    -derivedDataPath $(BUILD_DIR) \
 	    ONLY_ACTIVE_ARCH=YES \
 	    $(PRETTY)
@@ -261,9 +265,11 @@ archive: ## Create a Release archive (.xcarchive) signed with Developer ID
 	    -scheme      $(SCHEME) \
 	    -configuration Release \
 	    -archivePath $(ARCHIVE_PATH) \
+	    $(PROVISIONING_FLAGS) \
 	    CODE_SIGN_IDENTITY="Developer ID Application" \
 	    CODE_SIGN_STYLE=Manual \
-	    PROVISIONING_PROFILE_SPECIFIER="" \
+	    TAPTICK_DEVELOPER_ID_PROFILE="$(DEVELOPER_ID_PROFILE)" \
+	    DEVELOPMENT_TEAM="3FKXTCP8JU" \
 	    $(PRETTY)
 	@echo "  ✓ archive: $(ARCHIVE_PATH)"
 

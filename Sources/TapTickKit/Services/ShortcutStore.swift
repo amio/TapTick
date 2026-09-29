@@ -90,6 +90,7 @@ public final class ShortcutStore {
         reconcileTask = nil
         directoryMonitor = nil
         cloudSync?.onRemoteChange = nil
+        cloudSync?.localState = nil
         do {
             let state = try loadFromDisk()
             try ensureScriptsDirectory()
@@ -118,7 +119,14 @@ public final class ShortcutStore {
     private func setupCloudSync() {
         guard let cloudSync else { return }
         cloudSync.onRemoteChange = { [weak self] remoteState in
-            self?.applyRemoteChanges(remoteState)
+            guard let self else { throw CocoaError(.fileWriteUnknown) }
+            try self.applyRemoteChanges(remoteState)
+        }
+        cloudSync.localState = { [weak self] in
+            guard let self else { throw CocoaError(.fileReadUnknown) }
+            try self.requireWritable()
+            self.reconcileScriptDirectory()
+            return try self.loadFromDisk()
         }
     }
 
@@ -394,39 +402,35 @@ public final class ShortcutStore {
 
     private func syncToCloud() {
         guard canWrite else { return }
-        cloudSync?.upload(syncState)
+        do { cloudSync?.upload(try loadFromDisk()) } catch {
+            scriptDirectoryIssue = error.localizedDescription
+        }
     }
 
-    private func applyRemoteChanges(_ remoteState: ShortcutSyncState) {
-        guard canWrite else { return }
+    private func applyRemoteChanges(_ remoteState: ShortcutSyncState) throws {
         do {
+            try requireWritable()
             try remoteState.validate()
             reconcileScriptDirectory()
-            let merged = CloudSyncService.merge(local: syncState, remote: remoteState)
-            if merged != syncState {
-                adoptIncomingState(merged)
-                saveToDisk()
+            var merged = CloudSyncService.merge(local: syncState, remote: remoteState)
+            // Explicit-run history belongs to this Mac, even when remote content wins.
+            let localTriggers = Dictionary(uniqueKeysWithValues: shortcuts.map { ($0.id, $0.lastTriggeredAt) })
+            for index in merged.shortcuts.indices {
+                merged.shortcuts[index].lastTriggeredAt = localTriggers[merged.shortcuts[index].id] ?? nil
             }
-            if syncState != remoteState { syncToCloud() }
+            if merged != syncState { try adoptIncomingState(merged) }
+            syncToCloud()
         } catch {
             scriptDirectoryIssue = error.localizedDescription
+            throw error
         }
     }
 
     func performFullSync() {
         guard canWrite, let cloudSync, cloudSync.isEnabled else { return }
-        do {
-            let remote = try cloudSync.download()
-            try remote?.validate()
-            reconcileScriptDirectory()
-            if let remote {
-                adoptIncomingState(CloudSyncService.merge(local: syncState, remote: remote))
-                saveToDisk()
-            }
-            cloudSync.upload(syncState)
-        } catch {
-            scriptDirectoryIssue = error.localizedDescription
-        }
+        reconcileScriptDirectory()
+        syncToCloud()
+        cloudSync.syncNow()
     }
 
     // MARK: - Disk I/O
@@ -602,54 +606,23 @@ public final class ShortcutStore {
         return migrated
     }
 
-    private func adoptIncomingState(_ state: ShortcutSyncState) {
-        let previousByID = Dictionary(uniqueKeysWithValues: shortcuts.map { ($0.id, $0) })
-        let incomingIDs = Set(state.shortcuts.map(\.id))
-
-        for shortcut in shortcuts where !incomingIDs.contains(shortcut.id) {
-            if case .runScript = shortcut.action {
-                try? FileManager.default.removeItem(at: scriptURL(named: shortcut.name))
+    private func adoptIncomingState(_ state: ShortcutSyncState) throws {
+        var incoming = state
+        let managedNames = Set(shortcuts.filter { $0.action.scriptSource != nil }.map { nameKey($0.name) })
+        let originals = try visibleRegularFiles().filter { managedNames.contains(nameKey($0.lastPathComponent)) }
+        let entries = try FileManager.default.contentsOfDirectory(atPath: scriptsDirectoryURL.path)
+        var occupied = Set(entries.map(nameKey)).subtracting(originals.map { nameKey($0.lastPathComponent) })
+        for index in incoming.shortcuts.indices where incoming.shortcuts[index].action.scriptSource != nil {
+            let name = try availableName(preferred: incoming.shortcuts[index].name, occupiedKeys: occupied)
+            if incoming.shortcuts[index].name != name {
+                incoming.shortcuts[index].name = name
+                incoming.shortcuts[index].modifiedAt = max(
+                    Date(), incoming.shortcuts[index].modifiedAt.addingTimeInterval(0.001))
             }
+            occupied.insert(nameKey(name))
         }
-
-        var adopted: [Shortcut] = []
-        var occupiedKeys: Set<String> = []
-        for var shortcut in state.shortcuts {
-            guard case .runScript(let source) = shortcut.action else {
-                adopted.append(shortcut)
-                continue
-            }
-
-            do {
-                let previous = previousByID[shortcut.id]
-                let name = try uniqueName(
-                    preferred: shortcut.name,
-                    excludingFileName: previous?.name,
-                    includeStoredNames: false,
-                    additionalOccupiedKeys: occupiedKeys
-                )
-                let oldURL = previous.map { scriptURL(named: $0.name) }
-                let newURL = scriptURL(named: name)
-                if let oldURL, oldURL.path != newURL.path,
-                    FileManager.default.fileExists(atPath: oldURL.path)
-                {
-                    try moveScript(from: oldURL, to: newURL)
-                }
-                try writeScript(source, to: newURL)
-                shortcut.name = name
-                occupiedKeys.insert(nameKey(name))
-                adopted.append(shortcut)
-            } catch {
-                scriptDirectoryIssue = error.localizedDescription
-                if let previous = previousByID[shortcut.id] {
-                    adopted.append(previous)
-                    occupiedKeys.insert(nameKey(previous.name))
-                }
-            }
-        }
-
-        shortcuts = adopted
-        deletions = state.deletions
+        try commitScriptFiles(incoming, replacing: originals)
+        apply(incoming)
     }
 
     private func legacySource(at path: String, shell: ShortcutAction.LegacyShell) throws -> String {

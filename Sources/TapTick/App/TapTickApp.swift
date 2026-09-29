@@ -85,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let appState = AppState.shared
+        appState.cloudSync.start()
         let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
         let shouldOpenSettings = !hasLaunchedBefore || !isLaunchedByLoginItem()
 

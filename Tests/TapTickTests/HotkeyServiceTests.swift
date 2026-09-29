@@ -85,7 +85,7 @@ struct HotkeyServiceTests {
         let remote = Shortcut(
             name: "Remote", keyCombo: KeyCombo(keyCode: 1, modifiers: [.control, .option]),
             action: .launchApp(bundleIdentifier: "test.remote", appName: "Remote"))
-        cloud.onRemoteChange?(ShortcutSyncState(shortcuts: [remote], deletions: []))
+        try cloud.onRemoteChange?(ShortcutSyncState(shortcuts: [remote], deletions: []))
         try await waitUntil { registrar.registered.values.contains(remote.keyCombo!) }
         let registrationsBefore = registrar.registrationCount
         store.markTriggered(id: shortcut.id)

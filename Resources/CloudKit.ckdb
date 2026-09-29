@@ -1,0 +1,27 @@
+DEFINE SCHEMA
+
+RECORD TYPE ShortcutLibrary (
+    "___createTime" TIMESTAMP,
+    "___createdBy" REFERENCE,
+    "___etag" STRING,
+    "___modTime" TIMESTAMP,
+    "___modifiedBy" REFERENCE,
+    "___recordID" REFERENCE,
+    payload ASSET,
+    schemaVersion INT64,
+    GRANT READ TO "_creator",
+    GRANT WRITE TO "_creator",
+    GRANT CREATE TO "_icloud"
+);
+
+RECORD TYPE Users (
+    "___createTime" TIMESTAMP,
+    "___createdBy" REFERENCE,
+    "___etag" STRING,
+    "___modTime" TIMESTAMP,
+    "___modifiedBy" REFERENCE,
+    "___recordID" REFERENCE,
+    roles LIST<INT64>,
+    GRANT WRITE TO "_creator",
+    GRANT READ TO "_world"
+);

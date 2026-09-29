@@ -54,16 +54,24 @@ targets:
         COMBINE_HIDPI_IMAGES: true
         ENABLE_TESTING_SEARCH_PATHS: true
         SPARKLE_ED_PUBLIC_KEY: ""
+        TAPTICK_DEVELOPER_ID_PROFILE: TapTick Developer ID CloudKit
         LD_RUNPATH_SEARCH_PATHS:
           - $(inherited)
           - "@executable_path/../Frameworks"
       configs:
         Debug:
+          TAPTICK_CLOUD_ENVIRONMENT: Development
+          TAPTICK_PUSH_ENVIRONMENT: development
           PRODUCT_BUNDLE_IDENTIFIER: com.taptick.app.dev
           PRODUCT_NAME: TapTick Dev
           TAPTICK_DISPLAY_NAME: TapTick Dev
           TAPTICK_APP_SUPPORT_DIRECTORY_NAME: TapTick Dev
         Release:
+          CODE_SIGN_IDENTITY: Developer ID Application
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: $(TAPTICK_DEVELOPER_ID_PROFILE)
+          TAPTICK_CLOUD_ENVIRONMENT: Production
+          TAPTICK_PUSH_ENVIRONMENT: production
           PRODUCT_BUNDLE_IDENTIFIER: com.taptick.app
           PRODUCT_NAME: TapTick
           TAPTICK_DISPLAY_NAME: TapTick

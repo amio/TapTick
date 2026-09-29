@@ -227,6 +227,10 @@ struct GeneralSettingsView: View {
                             if cloudSync.isSyncing {
                                 ProgressView().controlSize(.small)
                                 Text("Syncing…")
+                            } else if cloudSync.lastError != nil {
+                                Text("Needs attention")
+                            } else if cloudSync.hasPendingChanges || cloudSync.lastSyncDate == nil {
+                                Text("Waiting to sync")
                             } else {
                                 Circle().fill(.green).frame(width: 8, height: 8)
                                 Text("Up to date")
@@ -246,6 +250,11 @@ struct GeneralSettingsView: View {
                             .font(.caption)
                     }
 
+                    if cloudSync.accountChanged {
+                        Button("Merge Local Shortcuts with Current iCloud Account") {
+                            cloudSync.useCurrentAccount()
+                        }
+                    }
                     Button("Sync Now") { store.performFullSync() }.controlSize(.small)
                 }
             } else {
@@ -255,7 +264,7 @@ struct GeneralSettingsView: View {
                         Text("Not Available")
                     }
                 }
-                Text("Sign in to iCloud in System Settings to enable sync across your Macs.")
+                Text(cloudSync.lastError ?? "Sign in to iCloud in System Settings to enable sync across your Macs.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
