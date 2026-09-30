@@ -146,37 +146,42 @@ struct GeneralSettingsView: View {
     private var syncSection: some View {
         Section {
             if cloudSync.isAvailable {
-                Toggle(
-                    "Sync via iCloud",
-                    isOn: Binding(
-                        get: { cloudSync.isEnabled },
-                        set: { newValue in
-                            cloudSync.isEnabled = newValue
-                            if newValue { store.performFullSync() }
+                LabeledContent("Sync via iCloud") {
+                    HStack(spacing: 12) {
+                        if cloudSync.isEnabled {
+                            syncStatus
                         }
-                    ))
+                        Toggle(
+                            "Sync via iCloud",
+                            isOn: Binding(
+                                get: { cloudSync.isEnabled },
+                                set: { newValue in
+                                    cloudSync.isEnabled = newValue
+                                    if newValue { store.performFullSync() }
+                                }
+                            )
+                        )
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                    }
+                }
 
                 if cloudSync.isEnabled {
-                    LabeledContent("Status") {
-                        HStack(spacing: 8) {
-                            if cloudSync.isSyncing {
-                                ProgressView().controlSize(.small)
-                                Text("Syncing…")
-                            } else if cloudSync.lastError != nil {
-                                Text("Needs attention")
-                            } else if cloudSync.hasPendingChanges || cloudSync.lastSyncDate == nil {
-                                Text("Waiting to sync")
-                            } else {
-                                Circle().fill(.green).frame(width: 8, height: 8)
-                                Text("Up to date")
+                    HStack(spacing: 12) {
+                        if let lastSync = cloudSync.lastSyncDate {
+                            HStack(spacing: 6) {
+                                Text("Last Synced")
+                                Text(lastSync, style: .relative)
+                                    .monospacedDigit()
                             }
+                            .foregroundStyle(.secondary)
+                        } else {
+                            Text("Not synced yet")
+                                .foregroundStyle(.secondary)
                         }
-                    }
-
-                    if let lastSync = cloudSync.lastSyncDate {
-                        LabeledContent("Last Synced") {
-                            Text(lastSync, style: .relative).foregroundStyle(.secondary)
-                        }
+                        Spacer()
+                        Button("Sync Now") { store.performFullSync() }
+                            .controlSize(.small)
                     }
 
                     if let error = cloudSync.lastError {
@@ -190,7 +195,6 @@ struct GeneralSettingsView: View {
                             cloudSync.useCurrentAccount()
                         }
                     }
-                    Button("Sync Now") { store.performFullSync() }.controlSize(.small)
                 }
             } else {
                 LabeledContent("iCloud") {
@@ -206,6 +210,27 @@ struct GeneralSettingsView: View {
         } header: {
             Text("iCloud Sync")
         }
+    }
+
+    private var syncStatus: some View {
+        HStack(spacing: 6) {
+            if cloudSync.isSyncing {
+                ProgressView().controlSize(.small)
+                Text("Syncing…")
+            } else if cloudSync.lastError != nil {
+                Text("Needs attention")
+            } else if cloudSync.hasPendingChanges || cloudSync.lastSyncDate == nil {
+                Text("Waiting to sync")
+            } else {
+                Circle()
+                    .fill(.green)
+                    .frame(width: 8, height: 8)
+                    .accessibilityHidden(true)
+                Text("Up to date")
+            }
+        }
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
     }
 
 }
