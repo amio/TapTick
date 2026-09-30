@@ -106,6 +106,14 @@ public struct SettingsView: View {
                     .sharedBackgroundVisibility(.hidden)
 
                     ToolbarSpacer(.flexible)
+
+                    if selectedSection == .general {
+                        ToolbarItem(placement: .automatic) {
+                            HotkeyListenerStatus()
+                                .padding(.trailing, 12)
+                        }
+                        .sharedBackgroundVisibility(.hidden)
+                    }
                 }
         }
     }

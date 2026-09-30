@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// General settings pane for operational app behavior such as startup, sync, and hotkeys.
 struct GeneralSettingsView: View {
@@ -13,74 +12,25 @@ struct GeneralSettingsView: View {
     @AppStorage(ScriptOutputToastSettings.holdDurationKey)
     private var toastHoldDuration = ScriptOutputToastSettings.defaultHoldDuration
     @State private var isRecordingSettingsWindowHotkey = false
-    @State private var isImportingShortcuts = false
-    @State private var isExportingShortcuts = false
-    @State private var exportDocument: ShortcutExportDocument?
-    @State private var fileOperationError = ""
-    @State private var isShowingFileOperationError = false
 
     var body: some View {
         Form {
-            statusSection
-            startupSection
-            toastSection
-            globalHotkeysSection
-            dataAndSyncSection
+            Section("App") {
+                appPreferences
+                settingsWindowHotkey
+            }
+            Section("Script Behavior") {
+                messageDuration
+            }
+            syncSection
         }
         .settingsFormStyle()
-        .fileImporter(
-            isPresented: $isImportingShortcuts,
-            allowedContentTypes: [.json]
-        ) { result in
-            importShortcuts(from: result)
-        }
-        .fileExporter(
-            isPresented: $isExportingShortcuts,
-            document: exportDocument,
-            contentType: .json,
-            defaultFilename: "taptick-shortcuts"
-        ) { result in
-            exportDocument = nil
-            if case .failure(let error) = result {
-                presentFileOperationError(error)
-            }
-        }
-        .alert("Shortcut File Error", isPresented: $isShowingFileOperationError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(fileOperationError)
-        }
     }
 
-    // MARK: - Status
+    // MARK: - App Preferences
 
-    private var statusSection: some View {
-        Section {
-            LabeledContent("Hotkey Listener") {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(hotkeyService.isListening ? .green : .red)
-                        .frame(width: 8, height: 8)
-                    Text(hotkeyService.isListening ? "Active" : "Inactive")
-
-                    if !hotkeyService.isListening {
-                        Button("Start") {
-                            hotkeyService.start(store: store)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-                }
-            }
-        } header: {
-            Text("Status")
-        }
-    }
-
-    // MARK: - Startup & Appearance
-
-    private var startupSection: some View {
-        Section {
+    private var appPreferences: some View {
+        Group {
             Toggle(
                 "Launch at Login",
                 isOn: Binding(
@@ -91,15 +41,13 @@ struct GeneralSettingsView: View {
             Toggle("Show Dock Icon", isOn: $showDockIcon)
 
             Toggle("Show Menu Bar Icon", isOn: $showMenuBarIcon)
-        } header: {
-            Text("Startup & Appearance")
         }
     }
 
-    // MARK: - Toast Notifications
+    // MARK: - Script Output
 
-    private var toastSection: some View {
-        Section {
+    private var messageDuration: some View {
+        Group {
             LabeledContent("Message Duration") {
                 HStack(spacing: 12) {
                     Slider(
@@ -115,13 +63,8 @@ struct GeneralSettingsView: View {
                         .frame(width: 42, alignment: .trailing)
                 }
             }
-
-            Text("Time each script output message stays visible before the next one appears.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } header: {
-            Text("Toast Notifications")
         }
+        .help("Time each script output message stays visible before the next one appears.")
     }
 
     private var toastHoldDurationBinding: Binding<TimeInterval> {
@@ -131,10 +74,10 @@ struct GeneralSettingsView: View {
         )
     }
 
-    // MARK: - Global Hotkeys
+    // MARK: - Settings Window Hotkey
 
-    private var globalHotkeysSection: some View {
-        Section {
+    private var settingsWindowHotkey: some View {
+        Group {
             LabeledContent("Toggle Settings Window") {
                 HStack(spacing: 8) {
                     HotkeyBindingControl(
@@ -166,50 +109,14 @@ struct GeneralSettingsView: View {
                     .disabled(hotkeyService.settingsWindowHotkey == HotkeyService.defaultSettingsWindowHotkey)
                 }
             }
-
-            Text("Shows or hides the TapTick settings window from anywhere.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } header: {
-            Text("Global Hotkeys")
         }
+        .help("Shows or hides the TapTick settings window from anywhere.")
     }
 
-    // MARK: - Data & Sync
+    // MARK: - iCloud Sync
 
-    private var appShortcutCount: Int {
-        store.shortcuts.filter {
-            if case .launchApp = $0.action { return true }
-            return false
-        }.count
-    }
-
-    private var scriptShortcutCount: Int {
-        store.shortcuts.filter {
-            switch $0.action {
-            case .runScript, .runScriptFile: return true
-            case .launchApp: return false
-            }
-        }.count
-    }
-
-    /// Single section combining shortcut counts, import/export, and iCloud sync.
-    private var dataAndSyncSection: some View {
+    private var syncSection: some View {
         Section {
-            // Shortcut counts + Export/Import in one row
-            LabeledContent {
-                HStack(spacing: 8) {
-                    Button("Export…") { prepareShortcutExport() }
-                    Button("Import…") { isImportingShortcuts = true }
-                }
-            } label: {
-                Text(
-                    "\(appShortcutCount) app\(appShortcutCount == 1 ? "" : "s"), \(scriptShortcutCount) script\(scriptShortcutCount == 1 ? "" : "s")"
-                )
-                .foregroundStyle(.secondary)
-            }
-
-            // iCloud sync toggle or unavailable notice
             if cloudSync.isAvailable {
                 Toggle(
                     "Sync via iCloud",
@@ -269,60 +176,34 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Data & Sync")
+            Text("iCloud Sync")
         }
     }
 
-    // MARK: - Export / Import
-
-    private func prepareShortcutExport() {
-        do {
-            exportDocument = ShortcutExportDocument(data: try store.exportData())
-            isExportingShortcuts = true
-        } catch {
-            presentFileOperationError(error)
-        }
-    }
-
-    private func importShortcuts(from result: Result<URL, Error>) {
-        do {
-            let url = try result.get()
-            let isAccessing = url.startAccessingSecurityScopedResource()
-            defer {
-                if isAccessing {
-                    url.stopAccessingSecurityScopedResource()
-                }
-            }
-
-            try store.importData(Data(contentsOf: url))
-        } catch {
-            presentFileOperationError(error)
-        }
-    }
-
-    private func presentFileOperationError(_ error: Error) {
-        fileOperationError = error.localizedDescription
-        isShowingFileOperationError = true
-    }
 }
 
-private struct ShortcutExportDocument: FileDocument {
-    static let readableContentTypes: [UTType] = [.json]
+/// Compact listener health and recovery in the General pane's toolbar.
+struct HotkeyListenerStatus: View {
+    @Environment(HotkeyService.self) private var hotkeyService
+    @Environment(ShortcutStore.self) private var store
 
-    let data: Data
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(hotkeyService.isListening ? .green : .red)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text(hotkeyService.isListening ? "Hotkey Listener Active" : "Hotkey Listener Inactive")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-    init(data: Data) {
-        self.data = data
-    }
-
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents else {
-            throw CocoaError(.fileReadCorruptFile)
+            if !hotkeyService.isListening {
+                Button("Start") {
+                    hotkeyService.start(store: store)
+                }
+                .controlSize(.small)
+            }
         }
-        self.data = data
-    }
-
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: data)
+        .help("Whether the global hotkey event listener is running.")
     }
 }
