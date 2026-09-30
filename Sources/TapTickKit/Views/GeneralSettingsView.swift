@@ -11,6 +11,8 @@ struct GeneralSettingsView: View {
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
     @AppStorage(ScriptOutputToastSettings.holdDurationKey)
     private var toastHoldDuration = ScriptOutputToastSettings.defaultHoldDuration
+    @AppStorage(ScriptExecutionSettings.timeoutKey)
+    private var scriptTimeout = ScriptExecutionSettings.defaultTimeout
     @State private var isRecordingSettingsWindowHotkey = false
 
     var body: some View {
@@ -20,6 +22,7 @@ struct GeneralSettingsView: View {
                 settingsWindowHotkey
             }
             Section("Script Behavior") {
+                executionTimeout
                 messageDuration
             }
             syncSection
@@ -45,6 +48,31 @@ struct GeneralSettingsView: View {
     }
 
     // MARK: - Script Output
+
+    private var executionTimeout: some View {
+        LabeledContent("Execution Timeout") {
+            HStack(spacing: 8) {
+                TextField("Execution Timeout", value: scriptTimeoutBinding, format: .number.grouping(.never))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 72)
+                    .accessibilityLabel("Execution Timeout in seconds")
+                Text("s")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .help(
+            "Stop scripts after 1–3600 seconds. Applies to new runs, including menu bar refreshes. Default: 60 seconds."
+        )
+    }
+
+    private var scriptTimeoutBinding: Binding<TimeInterval> {
+        Binding(
+            get: { ScriptExecutionSettings.normalizedTimeout(scriptTimeout) },
+            set: { scriptTimeout = ScriptExecutionSettings.normalizedTimeout($0) }
+        )
+    }
 
     private var messageDuration: some View {
         Group {

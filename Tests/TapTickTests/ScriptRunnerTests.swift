@@ -4,6 +4,42 @@ import Testing
 
 @Suite("ScriptRunner")
 struct ScriptRunnerTests {
+    @Test("Stored timeout defaults and invalid values remain bounded")
+    func storedTimeout() throws {
+        let suiteName = "TapTickTests.ScriptTimeout.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        #expect(ScriptExecutionSettings.timeout(defaults: defaults) == 60)
+        for (stored, expected) in [(120.0, 120.0), (0, 1), (7200, 3600), (1.6, 2), (.nan, 60)] {
+            defaults.set(stored, forKey: ScriptExecutionSettings.timeoutKey)
+            #expect(ScriptExecutionSettings.timeout(defaults: defaults) == expected)
+        }
+    }
+
+    @Test("An existing runner reads changed stored timeouts for subsequent runs")
+    func appliesChangedTimeout() async throws {
+        let suiteName = "TapTickTests.ScriptTimeout.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let url = try makeScript("#!/bin/sh\nprintf started\n/bin/sleep 2")
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let runner = ScriptRunner.process(timeoutProvider: {
+            ScriptExecutionSettings.timeout(defaults: UserDefaults(suiteName: suiteName)!)
+        })
+
+        defaults.set(1, forKey: ScriptExecutionSettings.timeoutKey)
+        let timedOut = await runner.run(ScriptCommand(fileURL: url))
+        #expect(!timedOut.succeeded)
+        #expect(timedOut.output.contains("started"))
+        #expect(timedOut.output.contains("timed out after 1 seconds"))
+
+        defaults.set(10, forKey: ScriptExecutionSettings.timeoutKey)
+        let completed = await runner.run(ScriptCommand(fileURL: url))
+        #expect(completed.succeeded)
+        #expect(completed.output == "started")
+    }
+
     @Test("Captures combined output and nonzero exit status")
     func capturesOutputAndExitStatus() async throws {
         let url = try makeScript("#!/bin/sh\nprintf output; printf error >&2; exit 7")

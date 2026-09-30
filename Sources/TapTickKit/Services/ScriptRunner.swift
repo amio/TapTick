@@ -1,6 +1,25 @@
 import Darwin
 import Foundation
 
+/// Local execution policy shared by explicit runs and background menu-bar scripts.
+enum ScriptExecutionSettings {
+    static let timeoutKey = "scriptExecutionTimeout"
+    static let defaultTimeout: TimeInterval = 60
+    static let timeoutRange: ClosedRange<TimeInterval> = 1...3600
+
+    static func normalizedTimeout(_ timeout: TimeInterval) -> TimeInterval {
+        guard timeout.isFinite else { return defaultTimeout }
+        return min(max(timeout.rounded(), timeoutRange.lowerBound), timeoutRange.upperBound)
+    }
+
+    static func timeout(defaults: UserDefaults = .standard) -> TimeInterval {
+        guard let stored = defaults.object(forKey: timeoutKey) as? TimeInterval else {
+            return defaultTimeout
+        }
+        return normalizedTimeout(stored)
+    }
+}
+
 /** A managed executable accepted by the low-level script process boundary. */
 struct ScriptCommand: Equatable, Hashable, Sendable {
     let fileURL: URL
@@ -108,12 +127,19 @@ struct ScriptRunner: Sendable {
         await operation(command)
     }
 
-    static let live = process(timeout: 60)
+    static let live = process(timeoutProvider: { ScriptExecutionSettings.timeout() })
 
     static func process(timeout: TimeInterval) -> ScriptRunner {
         precondition(timeout > 0 && timeout.isFinite)
+        return process(timeoutProvider: { timeout })
+    }
+
+    static func process(timeoutProvider: @escaping @Sendable () -> TimeInterval) -> ScriptRunner {
         return ScriptRunner { command in
-            await withCheckedContinuation { continuation in
+            // Snapshot once per invocation so settings changes only affect subsequent runs.
+            let timeout = timeoutProvider()
+            precondition(timeout > 0 && timeout.isFinite)
+            return await withCheckedContinuation { continuation in
                 // Blocking process IO must not occupy Swift's cooperative executor.
                 DispatchQueue.global(qos: .userInitiated).async {
                     continuation.resume(returning: runProcess(command, timeout: timeout))
