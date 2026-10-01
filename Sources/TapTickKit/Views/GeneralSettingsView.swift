@@ -242,13 +242,13 @@ struct HotkeyListenerStatus: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            Text(hotkeyService.isListening ? "Hotkey Listener Active" : "Hotkey Listener Inactive")
+                .font(.body)
+                .foregroundStyle(.secondary)
             Circle()
                 .fill(hotkeyService.isListening ? .green : .red)
                 .frame(width: 6, height: 6)
                 .accessibilityHidden(true)
-            Text(hotkeyService.isListening ? "Hotkey Listener Active" : "Hotkey Listener Inactive")
-                .font(.caption)
-                .foregroundStyle(.secondary)
 
             if !hotkeyService.isListening {
                 Button("Start") {

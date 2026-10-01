@@ -20,6 +20,7 @@ struct HotkeyBindingControl: View {
     var usesEmphasizedAppearance = false
 
     @State private var monitor: Any?
+    @State private var recordingWindow: NSWindow?
     /// Live preview text shown while recording. nil = nothing pressed yet.
     @State private var previewText: String?
     @State private var conflictingCombo: KeyCombo?
@@ -35,6 +36,13 @@ struct HotkeyBindingControl: View {
             }
         }
         .frame(height: 22)
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
+            guard let window = notification.object as? NSWindow, window === recordingWindow else { return }
+            cancelRecording()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            cancelRecording()
+        }
         .onDisappear {
             if isRecording {
                 stopLocalMonitor()
@@ -151,9 +159,22 @@ struct HotkeyBindingControl: View {
     // MARK: - Key Recording
 
     private func startLocalMonitor() {
+        guard monitor == nil else { return }
+        guard NSApp.isActive, let window = NSApp.keyWindow else {
+            onCancelRecording()
+            return
+        }
+        recordingWindow = window
         previewText = nil
         hotkeyService.suspendRegistrations()
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { event in
+            guard monitor != nil else { return event }
+            guard NSApp.isActive, recordingWindow?.isKeyWindow == true,
+                event.window === recordingWindow
+            else {
+                cancelRecording()
+                return event
+            }
             handleEvent(event)
             return nil
         }
@@ -204,9 +225,16 @@ struct HotkeyBindingControl: View {
         previewText = nil
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
+        recordingWindow = nil
         if hadMonitor {
             hotkeyService.resumeRegistrations()
         }
+    }
+
+    private func cancelRecording() {
+        guard monitor != nil else { return }
+        stopLocalMonitor()
+        onCancelRecording()
     }
 }
 
