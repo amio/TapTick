@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload failed test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-results-${{ github.run_attempt }}
           path: build/Logs/Test/*.xcresult
@@ -299,7 +299,7 @@ jobs:
       # ---- Upload artifact --------------------------------------------------
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name:              ${{ env.DMG_NAME }}
           path:              ${{ env.DMG_PATH }}
@@ -366,7 +366,7 @@ jobs:
           echo "$SPARKLE_ED_PRIVATE_KEY" | "$SPARKLE_BIN/generate_appcast" \
             --ed-key-file - \
             --download-url-prefix "https://github.com/amio/TapTick/releases/download/${GITHUB_REF_NAME}/" \
-            --link "https://amio.github.io/TapTick/" \
+            --link "https://taptick.jins.io/" \
             "$UPDATES_DIR"
 
           # --- Stage only the appcast for publication ---
@@ -379,7 +379,7 @@ jobs:
 
       - name: Upload Sparkle appcast
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sparkle-appcast
           path: ${{ runner.temp }}/sparkle-pages/appcast.xml
@@ -409,7 +409,7 @@ jobs:
 
     steps:
       - name: Download Sparkle appcast
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: sparkle-appcast
           path: public

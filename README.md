@@ -24,7 +24,7 @@ TapTick brings four essential Mac workflows together:
 
   ![Utilities settings](./public/screenshots/settings-utilities.png)
 
-Install from [GitHub Releases](https://github.com/amio/TapTick/releases)
+Download from [taptick.jins.io](https://taptick.jins.io/). The [GitHub Pages site](https://amio.github.io/TapTick/) and [GitHub Releases](https://github.com/amio/TapTick/releases) remain available.
 
 ## Development
 

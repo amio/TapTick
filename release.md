@@ -148,6 +148,25 @@ Keychain and removes that Keychain after distribution.
 
 ## Update feed and landing page ownership
 
+The primary homepage is [taptick.jins.io](https://taptick.jins.io/). The
+[GitHub Pages homepage](https://amio.github.io/TapTick/) remains available.
+Both sites use `make site` (Node.js 24.x) to fetch the latest GitHub Release,
+write the DMG links and version, and copy static assets to `build/site`.
+`public/index.html` remains a template with `{{DOWNLOAD_URL}}` and `{{VERSION}}`
+placeholders. Only `build/site/index.html` contains the resolved DMG URLs and
+version; deploy the build output, not the template directory.
+A failed release lookup fails the build, preserving the previous deployment.
+
+Vercel uses the repository-root `vercel.json`: build command `make site`, output
+directory `build/site`, and no framework or dependency installation. Set the
+Vercel project Root Directory to the repository root, not `public`.
+`package.json` selects Node.js 24.x for both Vercel and GitHub Actions;
+Vercel manages patch updates and Actions checks for the latest 24.x release. No token is
+required for the public API; optional `GH_TOKEN` increases its rate limit.
+GitHub Pages passes its Actions token to the same builder. New releases update
+GitHub Pages automatically; Vercel picks up release metadata on its next build.
+For a release without a production-branch push, redeploy Vercel to refresh it.
+
 [UpdateService](Sources/TapTickKit/Services/UpdateService.swift) wraps Sparkle.
 The app's feed URL is [appcast.xml](https://amio.github.io/TapTick/appcast.xml);
 update archives are hosted on GitHub Releases.

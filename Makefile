@@ -355,3 +355,7 @@ ci: ## Full CI pipeline: lint → unit tests → release build
 	@echo "========================================="
 	@echo "  ✓ CI passed"
 	@echo "========================================="
+
+.PHONY: site
+site: ## Build the static website with current GitHub Release links (Node.js 24.x)
+	node scripts/build-site.mjs
