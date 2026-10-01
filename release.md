@@ -33,9 +33,9 @@ project settings. Never maintain generated Xcode metadata by hand.
 The version targets update `project.yml`, regenerate the project, commit, and
 create an annotated tag:
 
-- `make version-patch`, `make version-minor`, or `make version-major` increments
+- `make version patch`, `make version minor`, or `make version major` increments
   the chosen version component and build number, then tags `vX.Y.Z`.
-- `make version-build` increments only the build number and tags `vX.Y.Z+bN`.
+- `make version build` increments only the build number and tags `vX.Y.Z+bN`.
 
 Use these targets from a clean working tree with no unrelated staged changes.
 They do not push. Push the resulting commit and its exact tag when ready to

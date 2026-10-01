@@ -35,7 +35,7 @@ export PATH := /opt/homebrew/bin:/usr/local/bin:$(PATH)
         archive export notarize dmg dist \
         clean reset \
         ci \
-        version-patch version-minor version-major version-build
+        version
 
 # -----------------------------------------------------------------------------
 # Help
@@ -184,14 +184,14 @@ lint: ## Lint Swift source files with swift-format (no writes)
 # Version numbers are stored in project.yml. This workflow updates project.yml,
 # regenerates the Xcode project, and commits the changes.
 #
-# version-patch/minor/major workflow:
+# make version patch/minor/major workflow:
 #   1. Read MARKETING_VERSION and CURRENT_PROJECT_VERSION from project.yml
 #   2. Compute next semver; increment build number
 #   3. Write both back into project.yml
 #   4. Run `make gen` to update TapTick.xcodeproj
 #   5. Commit project.yml, create an annotated git tag vX.Y.Z
 #
-# version-build workflow:
+# make version build workflow:
 #   1. Read and increment CURRENT_PROJECT_VERSION only
 #   2. Write back into project.yml and run `make gen`
 #   3. Commit project.yml
@@ -238,17 +238,26 @@ define _bump_version
 	fi
 endef
 
-version-patch: ## Bump patch version (1.0.0 → 1.0.1), commit and tag
-	$(call _bump_version,patch)
+# Make treats positional arguments as goals. Validate before any release mutation,
+# then consume the selected argument as a no-op goal only for this invocation.
+ifneq ($(filter version,$(MAKECMDGOALS)),)
+ifneq ($(words $(MAKECMDGOALS)),2)
+$(error Usage: make version <patch|minor|major|build>)
+endif
+ifneq ($(firstword $(MAKECMDGOALS)),version)
+$(error Usage: make version <patch|minor|major|build>)
+endif
+_version_kind := $(word 2,$(MAKECMDGOALS))
+ifeq ($(filter $(_version_kind),patch minor major build),)
+$(error Usage: make version <patch|minor|major|build>)
+endif
+.PHONY: $(_version_kind)
+$(_version_kind):
+	@:
+endif
 
-version-minor: ## Bump minor version (1.0.0 → 1.1.0), commit and tag
-	$(call _bump_version,minor)
-
-version-major: ## Bump major version (1.0.0 → 2.0.0), commit and tag
-	$(call _bump_version,major)
-
-version-build: ## Bump build number only, no semver change, commit and tag
-	$(call _bump_version,build)
+version: ## Bump and tag: make version <patch|minor|major|build>
+	$(call _bump_version,$(_version_kind))
 
 # -----------------------------------------------------------------------------
 # Archive / Release
