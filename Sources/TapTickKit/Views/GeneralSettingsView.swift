@@ -167,6 +167,15 @@ struct GeneralSettingsView: View {
                 }
 
                 if cloudSync.isEnabled {
+                    if let summary = cloudSync.firstSyncSummary,
+                        summary.identicalScripts > 0 || summary.keptBothPairs > 0
+                    {
+                        Text(
+                            "First sync: combined \(summary.identicalScripts) identical scripts; kept \(summary.keptBothPairs) differing pairs as separate versions."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                     HStack(spacing: 12) {
                         if let lastSync = cloudSync.lastSyncDate {
                             HStack(spacing: 6) {
@@ -209,6 +218,10 @@ struct GeneralSettingsView: View {
             }
         } header: {
             Text("iCloud Sync")
+        } footer: {
+            Text(
+                "On the first sync, identical same-name scripts are combined. Scripts with different content or settings are kept as separate versions."
+            )
         }
     }
 

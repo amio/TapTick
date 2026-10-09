@@ -16,6 +16,7 @@ NOTARIZE_PROFILE ?= TapTick
 DEVELOPER_ID_PROFILE ?= TapTick Developer ID CloudKit
 # Opt in when Xcode needs to download/update profiles using the signed-in account.
 PROVISIONING_FLAGS ?=
+TEST_FILTER ?= TapTickTests
 
 # Detect xcbeautify for prettier xcodebuild output. Preserve both pipeline exit
 # codes explicitly because macOS ships GNU Make 3.81, which ignores .SHELLFLAGS.
@@ -144,7 +145,7 @@ test: ## Run unit tests via xcodebuild
 	xcodebuild test \
 	    -project $(PROJECT) \
 	    -scheme  $(SCHEME) \
-	    -only-testing:TapTickTests \
+	    $(foreach test,$(TEST_FILTER),-only-testing:$(test)) \
 	    -derivedDataPath $(BUILD_DIR) \
 	    ONLY_ACTIVE_ARCH=YES \
 	    CODE_SIGNING_ALLOWED=NO \

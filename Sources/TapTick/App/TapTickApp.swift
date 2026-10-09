@@ -43,7 +43,13 @@ final class AppState {
             logStore: scriptLogStore,
             outputPresenter: scriptOutputPresenter
         )
-        self.menuBarTextController = MenuBarTextController(store: store)
+        let menuBarTextController = MenuBarTextController(store: store)
+        self.menuBarTextController = menuBarTextController
+        store.onScriptIDsReplaced = { [weak menuBarTextController, weak scriptLogStore] replacements in
+            guard let menuBarTextController, let scriptLogStore else { throw CocoaError(.fileWriteUnknown) }
+            try menuBarTextController.replaceScriptIDs(replacements)
+            try scriptLogStore.replaceScriptIDs(replacements)
+        }
     }
 
     func requestSettingsOpen() {

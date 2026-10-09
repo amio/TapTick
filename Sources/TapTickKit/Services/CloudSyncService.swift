@@ -18,6 +18,8 @@ public final class CloudSyncService: CKSyncEngineDelegate {
     private(set) var lastError: String?
     private(set) var accountChanged = false
     private(set) var hasPendingChanges = false
+    private(set) var firstSyncSummary: FirstSyncMerge.Summary?
+    var scriptIDReplacements: [UUID: UUID] { snapshot.scriptIDReplacements ?? [:] }
 
     var isEnabled: Bool {
         didSet {
@@ -141,6 +143,11 @@ public final class CloudSyncService: CKSyncEngineDelegate {
                 self.accountChanged = false
                 guard let localState = self.localState else { return }
                 try self.snapshot.merge(localState())
+                if self.snapshot.firstSync?.hasFetched == true, self.snapshot.firstSync?.hasAdopted == false,
+                    let remote = self.snapshot.acknowledged
+                {
+                    self.snapshot.mergeFirstSync(remote)
+                }
                 try self.persist()
                 try self.adoptRemote()
                 if self.engine == nil {
@@ -155,6 +162,12 @@ public final class CloudSyncService: CKSyncEngineDelegate {
                 try await engine.fetchChanges()
                 try Task.checkCancellation()
                 guard self.engine === engine else { return }
+                if self.snapshot.firstSync?.hasFetched == false {
+                    self.snapshot.mergeFirstSync(.empty)
+                    try self.persist()
+                    try self.adoptRemote()
+                    self.queueUpload(engine)
+                }
                 try await engine.sendChanges()
                 guard self.engine === engine else { return }
                 if !self.snapshot.needsUpload, self.lastError == nil { self.lastSyncDate = Date() }
@@ -190,16 +203,31 @@ public final class CloudSyncService: CKSyncEngineDelegate {
     private func persist() throws {
         try snapshot.write(to: cacheURL)
         hasPendingChanges = snapshot.needsUpload
+        firstSyncSummary = snapshot.firstSyncSummary
     }
 
     private func adoptRemote() throws {
+        guard snapshot.canAdopt else { return }
         guard let onRemoteChange else { throw CocoaError(.fileWriteUnknown) }
         try onRemoteChange(snapshot.library)
+        if snapshot.firstSync != nil {
+            snapshot.firstSync?.hasAdopted = true
+            if !snapshot.needsUpload { snapshot.firstSync = nil }
+            try persist()
+        }
         lastError = nil
     }
 
+    private func receive(_ record: CKRecord) throws {
+        // The directory may have changed before its debounce fires while a cloud fetch is in flight.
+        if snapshot.firstSync != nil, let localState { try snapshot.merge(localState()) }
+        try snapshot.receive(record)
+        try persist()
+        do { try adoptRemote() } catch { lastError = error.localizedDescription }
+    }
+
     private func queueUpload(_ engine: CKSyncEngine) {
-        guard snapshot.needsUpload else {
+        guard snapshot.needsUpload, snapshot.canSend else {
             engine.state.remove(pendingRecordZoneChanges: [.saveRecord(CloudSyncSnapshot.recordID)])
             return
         }
@@ -237,9 +265,7 @@ public final class CloudSyncService: CKSyncEngineDelegate {
             case .fetchedRecordZoneChanges(let event):
                 for modification in event.modifications where modification.record.recordID == CloudSyncSnapshot.recordID
                 {
-                    try snapshot.receive(modification.record)
-                    try persist()
-                    do { try adoptRemote() } catch { lastError = error.localizedDescription }
+                    try receive(modification.record)
                     queueUpload(syncEngine)
                 }
                 if event.deletions.contains(where: { $0.recordID == CloudSyncSnapshot.recordID }) {
@@ -253,6 +279,7 @@ public final class CloudSyncService: CKSyncEngineDelegate {
                 for record in event.savedRecords where record.recordID == CloudSyncSnapshot.recordID {
                     guard let sendingLibrary else { throw CocoaError(.coderReadCorrupt) }
                     snapshot.acknowledge(record, library: sendingLibrary)
+                    if snapshot.canSend { snapshot.firstSync = nil }
                     try persist()
                     queueUpload(syncEngine)
                     if !snapshot.needsUpload, lastError == nil { lastSyncDate = Date() }
@@ -264,9 +291,7 @@ public final class CloudSyncService: CKSyncEngineDelegate {
                         guard let container else { return }
                         let record = try await container.privateCloudDatabase.record(for: CloudSyncSnapshot.recordID)
                         guard engine === syncEngine else { return }
-                        try snapshot.receive(record)
-                        try persist()
-                        do { try adoptRemote() } catch { lastError = error.localizedDescription }
+                        try receive(record)
                         queueUpload(syncEngine)
                     case .zoneNotFound, .unknownItem:
                         try resetServerRecord(syncEngine)
@@ -314,7 +339,8 @@ public final class CloudSyncService: CKSyncEngineDelegate {
         _ context: CKSyncEngine.SendChangesContext, syncEngine: CKSyncEngine
     ) async -> CKSyncEngine.RecordZoneChangeBatch? {
         guard engine === syncEngine, !fatalError, isEnabled, !accountChanged,
-            context.options.scope.contains(.saveRecord(CloudSyncSnapshot.recordID)), snapshot.needsUpload
+            context.options.scope.contains(.saveRecord(CloudSyncSnapshot.recordID)), snapshot.needsUpload,
+            snapshot.canSend
         else { return nil }
         do {
             let url = cacheURL.deletingLastPathComponent().appendingPathComponent("asset-\(UUID()).json")

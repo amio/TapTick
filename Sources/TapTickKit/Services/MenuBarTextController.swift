@@ -121,6 +121,23 @@ public final class MenuBarTextController {
         }
     }
 
+    /// Persist before publishing so failed first-sync adoption can safely replay the mapping.
+    public func replaceScriptIDs(_ replacements: [UUID: UUID]) throws {
+        var updated = slots
+        var changed = false
+        for index in updated.indices {
+            for position in [MenuBarTextLinePosition.top, .bottom] {
+                guard let id = updated[index][position].scriptID, let target = replacements[id] else { continue }
+                updated[index][position].scriptID = target
+                changed = true
+            }
+        }
+        guard changed else { return }
+        try persistConfiguration(updated)
+        slots = updated
+        if isBootstrapped { reconcileRefreshJobs() }
+    }
+
     private func renderedSlot(
         _ slot: MenuBarTextSlot,
         showsPlaceholders: Bool
@@ -300,13 +317,17 @@ public final class MenuBarTextController {
 
     private func saveConfiguration() {
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(MenuBarTextConfiguration(slots: slots))
-            try data.write(to: fileURL, options: .atomic)
+            try persistConfiguration(slots)
         } catch {
             print("TapTick: Failed to save menu bar text configuration: \(error)")
         }
+    }
+
+    private func persistConfiguration(_ slots: [MenuBarTextSlot]) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(MenuBarTextConfiguration(slots: slots))
+        try data.write(to: fileURL, options: .atomic)
     }
 
     private static func loadConfiguration(from fileURL: URL) -> MenuBarTextConfiguration? {

@@ -57,6 +57,8 @@ public final class ShortcutStore {
 
     @ObservationIgnored private let fileURL: URL
     @ObservationIgnored private let cloudSync: CloudSyncService?
+    /// Reference owners replay first-sync ID replacements after the library's durable commit.
+    @ObservationIgnored public var onScriptIDsReplaced: (([UUID: UUID]) throws -> Void)?
     @ObservationIgnored private var directoryMonitor: ScriptDirectoryMonitor?
     @ObservationIgnored private var reconcileTask: Task<Void, Never>?
 
@@ -118,9 +120,9 @@ public final class ShortcutStore {
 
     private func setupCloudSync() {
         guard let cloudSync else { return }
-        cloudSync.onRemoteChange = { [weak self] remoteState in
-            guard let self else { throw CocoaError(.fileWriteUnknown) }
-            try self.applyRemoteChanges(remoteState)
+        cloudSync.onRemoteChange = { [weak self, weak cloudSync] remoteState in
+            guard let self, let cloudSync else { throw CocoaError(.fileWriteUnknown) }
+            try self.applyRemoteChanges(remoteState, replacements: cloudSync.scriptIDReplacements)
         }
         cloudSync.localState = { [weak self] in
             guard let self else { throw CocoaError(.fileReadUnknown) }
@@ -339,7 +341,9 @@ public final class ShortcutStore {
                 }
                 try ensureExecutable(url)
 
-                if shortcuts[index].action.scriptSource != source
+                // Executable source identity is byte-exact, including canonically equivalent Unicode.
+                let sourceMatches = shortcuts[index].action.scriptSource?.utf8.elementsEqual(source.utf8) == true
+                if !sourceMatches
                     || shortcuts[index].name != url.lastPathComponent
                 {
                     shortcuts[index].name = url.lastPathComponent
@@ -407,18 +411,27 @@ public final class ShortcutStore {
         }
     }
 
-    private func applyRemoteChanges(_ remoteState: ShortcutSyncState) throws {
+    func applyRemoteChanges(_ remoteState: ShortcutSyncState, replacements: [UUID: UUID]) throws {
         do {
             try requireWritable()
             try remoteState.validate()
             reconcileScriptDirectory()
             var merged = CloudSyncService.merge(local: syncState, remote: remoteState)
+            let liveIDs = Set(merged.shortcuts.map(\.id))
+            // A deliberately restored old identity becomes independent again under normal sync rules.
+            let replacements = replacements.filter { !liveIDs.contains($0.key) && liveIDs.contains($0.value) }
             // Explicit-run history belongs to this Mac, even when remote content wins.
-            let localTriggers = Dictionary(uniqueKeysWithValues: shortcuts.map { ($0.id, $0.lastTriggeredAt) })
+            var localTriggers: [UUID: Date] = [:]
+            for shortcut in shortcuts {
+                guard let date = shortcut.lastTriggeredAt else { continue }
+                let id = replacements[shortcut.id] ?? shortcut.id
+                localTriggers[id] = max(localTriggers[id] ?? .distantPast, date)
+            }
             for index in merged.shortcuts.indices {
                 merged.shortcuts[index].lastTriggeredAt = localTriggers[merged.shortcuts[index].id] ?? nil
             }
             if merged != syncState { try adoptIncomingState(merged) }
+            try onScriptIDsReplaced?(replacements)
             syncToCloud()
         } catch {
             scriptDirectoryIssue = error.localizedDescription
@@ -736,10 +749,12 @@ public final class ShortcutStore {
     }
 
     private func nameKey(_ name: String) -> String {
+        Self.scriptNameKey(name)
+    }
+
+    nonisolated static func scriptNameKey(_ name: String) -> String {
         name.precomposedStringWithCanonicalMapping.folding(
-            options: [.caseInsensitive],
-            locale: Locale(identifier: "en_US_POSIX")
-        )
+            options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }
 
     private func scriptURL(named name: String) -> URL {

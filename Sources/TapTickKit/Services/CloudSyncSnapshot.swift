@@ -9,6 +9,35 @@ struct CloudSyncSnapshot: Codable {
     var acknowledged: ShortcutSyncState?
     var recordFields: Data?
     var engineState: CKSyncEngine.State.Serialization?
+    // Optional fields decode as nil in established caches, which must not rerun first sync.
+    var firstSync: FirstSyncSession? = FirstSyncSession()
+    var firstSyncSummary: FirstSyncMerge.Summary?
+    var scriptIDReplacements: [UUID: UUID]?
+
+    var canSend: Bool {
+        canAdopt && (firstSync == nil || firstSync?.hasAdopted == true)
+    }
+
+    var canAdopt: Bool {
+        firstSync == nil || firstSync?.hasFetched == true
+    }
+
+    mutating func mergeFirstSync(_ remote: ShortcutSyncState) {
+        let result = FirstSyncMerge(local: library, remote: remote)
+        library = result.library
+        var replacements = scriptIDReplacements ?? [:]
+        for (oldID, targetID) in replacements {
+            replacements[oldID] = result.replacements[targetID] ?? targetID
+        }
+        replacements.merge(result.replacements) { _, new in new }
+        scriptIDReplacements = replacements
+        let previous = firstSyncSummary
+        firstSyncSummary = FirstSyncMerge.Summary(
+            identicalScripts: (previous?.identicalScripts ?? 0) + result.summary.identicalScripts,
+            keptBothPairs: (previous?.keptBothPairs ?? 0) + result.summary.keptBothPairs)
+        firstSync?.hasFetched = true
+        firstSync?.hasAdopted = false
+    }
 
     static let zoneID = CKRecordZone.ID(zoneName: "Shortcuts")
     static let recordID = CKRecord.ID(recordName: "library", zoneID: zoneID)
@@ -42,7 +71,11 @@ struct CloudSyncSnapshot: Codable {
 
     mutating func receive(_ record: CKRecord) throws {
         let remote = try Self.decode(record)
-        try merge(remote)
+        if firstSync != nil {
+            mergeFirstSync(remote)
+        } else {
+            try merge(remote)
+        }
         acknowledge(record, library: remote)
     }
 

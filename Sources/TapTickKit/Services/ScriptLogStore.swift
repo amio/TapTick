@@ -101,6 +101,7 @@ public final class ScriptLogStore {
     public static let recentLogLimit = 32
 
     @ObservationIgnored private let fileURL: URL
+    @ObservationIgnored private var scriptIDReplacements: [UUID: UUID] = [:]
 
     public init(directory: URL? = nil) {
         let baseDirectory =
@@ -121,6 +122,8 @@ public final class ScriptLogStore {
     public private(set) var recentLogs: [ScriptExecutionLog] = []
 
     public func record(_ log: ScriptExecutionLog) {
+        let log = ScriptExecutionLog(
+            shortcutID: scriptIDReplacements[log.shortcutID] ?? log.shortcutID, result: log.result)
         recentLogs.removeAll { $0.id == log.id }
         recentLogs.insert(log, at: 0)
         trimHistory()
@@ -129,6 +132,27 @@ public final class ScriptLogStore {
 
     public func recentLogs(for shortcutID: UUID) -> [ScriptExecutionLog] {
         recentLogs.filter { $0.shortcutID == shortcutID }
+    }
+
+    /// Include runs that finish after their script's first-sync identity has changed.
+    public func replaceScriptIDs(_ replacements: [UUID: UUID]) throws {
+        let changed = recentLogs.contains { replacements[$0.shortcutID] != nil }
+        if changed {
+            var counts: [UUID: Int] = [:]
+            var ids: Set<String> = []
+            let remapped = recentLogs.map {
+                ScriptExecutionLog(shortcutID: replacements[$0.shortcutID] ?? $0.shortcutID, result: $0.result)
+            }.sorted { $0.timestamp > $1.timestamp }.filter { log in
+                guard ids.insert(log.id).inserted, counts[log.shortcutID, default: 0] < Self.recentLogLimit else {
+                    return false
+                }
+                counts[log.shortcutID, default: 0] += 1
+                return true
+            }
+            try persistLogs(remapped)
+            recentLogs = remapped
+        }
+        scriptIDReplacements = replacements
     }
 
     private func trimHistory() {
@@ -158,13 +182,17 @@ public final class ScriptLogStore {
 
     private func saveToDisk() {
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(ScriptLogArchive(logs: recentLogs))
-            try data.write(to: fileURL, options: .atomic)
+            try persistLogs(recentLogs)
         } catch {
             print("TapTick: Failed to save script logs: \(error)")
         }
+    }
+
+    private func persistLogs(_ logs: [ScriptExecutionLog]) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(ScriptLogArchive(logs: logs))
+        try data.write(to: fileURL, options: .atomic)
     }
 }
 
