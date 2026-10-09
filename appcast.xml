@@ -3,6 +3,15 @@
     <channel>
         <title>KeyMagic</title>
         <item>
+            <title>1.8.2</title>
+            <pubDate>Fri, 09 Oct 2026 13:59:48 +0000</pubDate>
+            <link>https://taptick.jins.io/</link>
+            <sparkle:version>53</sparkle:version>
+            <sparkle:shortVersionString>1.8.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.8.2/TapTick-1.8.2.dmg" length="4180907" type="application/octet-stream" sparkle:edSignature="6SxM58oi9XFlZTxpwwzTuWajJe1ktYf3HpFH13smm9s+csusd4G8Xz4R1bfCEfXJaSfZlw5yMpcWbfWcIEjVAQ=="/>
+        </item>
+        <item>
             <title>1.8.1</title>
             <pubDate>Thu, 01 Oct 2026 03:22:59 +0000</pubDate>
             <link>https://amio.github.io/TapTick/</link>
@@ -19,15 +28,6 @@
             <sparkle:shortVersionString>1.8.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/amio/TapTick/releases/download/v1.8.0/TapTick-1.8.0.dmg" length="4153630" type="application/octet-stream" sparkle:edSignature="JwFQxp/IkaXdgfoCbfpagNOypjLP5Vw+ruK6gvUClk9FmzE/T1flgah2MfnBQYXN8xeQUWZUMptlEosTK1drAw=="/>
-        </item>
-        <item>
-            <title>1.7.2</title>
-            <pubDate>Sat, 26 Sep 2026 06:11:19 +0000</pubDate>
-            <link>https://amio.github.io/TapTick/</link>
-            <sparkle:version>50</sparkle:version>
-            <sparkle:shortVersionString>1.7.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.7.2/TapTick-1.7.2.dmg" length="4068823" type="application/octet-stream" sparkle:edSignature="QzDZLeGa3NV4hxHbDxwcOB8vuLXPXpYcGEBAjvfCv6TbNuUdh1ywxi/t3S6w6cSDrgHh9u/QRbwx5lLmq1v3BA=="/>
         </item>
         <item>
             <title>1.4.3</title>
