@@ -142,7 +142,8 @@ final class MenuBarStatusContentView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        let foregroundColor = foregroundColor()
+        // Status button highlighting does not use a selected menu item's background.
+        let foregroundColor = NSColor.labelColor
         drawIcon(color: foregroundColor)
 
         var originX = Self.iconAreaWidth
@@ -278,15 +279,6 @@ final class MenuBarStatusContentView: NSView {
             ]
         ])
         return NSFont(descriptor: descriptor, size: baseFont.pointSize) ?? baseFont
-    }
-
-    private func foregroundColor() -> NSColor {
-        guard let button = superview as? NSStatusBarButton,
-            button.cell?.isHighlighted == true
-        else {
-            return .labelColor
-        }
-        return .selectedMenuItemTextColor
     }
 
     private static func menuBarImage() -> NSImage? {
