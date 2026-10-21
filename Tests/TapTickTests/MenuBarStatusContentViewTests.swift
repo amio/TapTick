@@ -4,6 +4,48 @@ import Testing
 
 @Suite("Menu Bar Status Content")
 struct MenuBarStatusContentViewTests {
+    @Test("Removing slots publishes the reduced status item width")
+    @MainActor
+    func removingSlotsPublishesReducedWidth() {
+        let slots = [40, 60, 80].map { width in
+            renderedSlot(
+                fitsContentWidth: false,
+                widthPoints: width,
+                contents: [MenuBarTextContent(text: "CPU 9%", isPlaceholder: false)]
+            )
+        }
+        let view = MenuBarStatusContentView(frame: .zero)
+        var publishedWidth: CGFloat?
+        view.widthDidChange = { publishedWidth = $0 }
+
+        view.update(slots: slots, animated: true)
+        let remainingSlots = [slots[0], slots[2]]
+        view.update(slots: remainingSlots, animated: true)
+
+        let expectedWidth = MenuBarStatusContentView.width(for: remainingSlots)
+        #expect(publishedWidth == expectedWidth)
+        #expect(view.intrinsicContentSize.width == expectedWidth)
+    }
+
+    @Test("Removing the last slot publishes the icon-only width")
+    @MainActor
+    func removingLastSlotPublishesIconOnlyWidth() {
+        let slot = renderedSlot(
+            fitsContentWidth: false,
+            widthPoints: 80,
+            contents: [MenuBarTextContent(text: "CPU 9%", isPlaceholder: false)]
+        )
+        let view = MenuBarStatusContentView(frame: .zero)
+        var publishedWidth: CGFloat?
+        view.widthDidChange = { publishedWidth = $0 }
+
+        view.update(slots: [slot], animated: true)
+        view.update(slots: [], animated: true)
+
+        #expect(publishedWidth == MenuBarStatusContentView.iconAreaWidth)
+        #expect(view.intrinsicContentSize.width == MenuBarStatusContentView.iconAreaWidth)
+    }
+
     @Test("Fixed width ignores content length")
     @MainActor
     func fixedWidthIgnoresContentLength() {

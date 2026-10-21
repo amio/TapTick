@@ -70,8 +70,10 @@ final class MenuBarStatusContentView: NSView {
             uniqueKeysWithValues: slots.map { ($0.id, displayedWidths[$0.id] ?? 0) }
         )
         guard startWidths != targetWidths else {
+            stopWidthAnimation()
             displayedWidths = targetWidths
-            needsDisplay = true
+            // Removing slots changes the total width even when retained widths are unchanged.
+            displayWidthDidChange()
             return
         }
 
