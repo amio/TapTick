@@ -3,6 +3,15 @@
     <channel>
         <title>KeyMagic</title>
         <item>
+            <title>1.8.3</title>
+            <pubDate>Thu, 22 Oct 2026 05:07:38 +0000</pubDate>
+            <link>https://taptick.jins.io/</link>
+            <sparkle:version>54</sparkle:version>
+            <sparkle:shortVersionString>1.8.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.8.3/TapTick-1.8.3.dmg" length="4180805" type="application/octet-stream" sparkle:edSignature="O4ToePzHMfLMYyLdDm/734GQJl+Vn0HSlqHjiy9EgT3AqeUDZFDRtvs1DusqxryQsgeBzRBji4oSAOCUVg7hBQ=="/>
+        </item>
+        <item>
             <title>1.8.2</title>
             <pubDate>Fri, 09 Oct 2026 13:59:48 +0000</pubDate>
             <link>https://taptick.jins.io/</link>
@@ -19,15 +28,6 @@
             <sparkle:shortVersionString>1.8.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/amio/TapTick/releases/download/v1.8.1/TapTick-1.8.1.dmg" length="4131389" type="application/octet-stream" sparkle:edSignature="sp/j/3+8X2+1SpXQqiMIBTetLfvsCfvyhwSzm7WcJOkNKhrz8PTFMg0i/+WwC4dYqba5cncjjYf6oAxbQqtfCg=="/>
-        </item>
-        <item>
-            <title>1.8.0</title>
-            <pubDate>Tue, 29 Sep 2026 15:42:31 +0000</pubDate>
-            <link>https://amio.github.io/TapTick/</link>
-            <sparkle:version>51</sparkle:version>
-            <sparkle:shortVersionString>1.8.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/amio/TapTick/releases/download/v1.8.0/TapTick-1.8.0.dmg" length="4153630" type="application/octet-stream" sparkle:edSignature="JwFQxp/IkaXdgfoCbfpagNOypjLP5Vw+ruK6gvUClk9FmzE/T1flgah2MfnBQYXN8xeQUWZUMptlEosTK1drAw=="/>
         </item>
         <item>
             <title>1.4.3</title>
